@@ -39,7 +39,8 @@ function spread(text: string, duration: number): Line[] {
 
 export function loadLyrics(s: PlayerState): Promise<LyricSet | null> {
   // Só busca com a duração conhecida: ela é usada para achar a versão certa.
-  const key = s.videoId;
+  // A duração entra na chave: se vier errada num primeiro momento, busca de novo.
+  const key = `${s.videoId}:${Math.round(s.duration)}`;
   if (!s.videoId || !(s.duration > 0)) return new Promise(() => {}); // aguarda
   let p = cache.get(key);
   if (!p) {

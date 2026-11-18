@@ -3,6 +3,7 @@
   // segue sozinha. Rolou com o mouse? Pausa o acompanhamento por alguns segundos
   // (ou até clicar em "Seguir a música"). Clique numa linha para pular até ela.
   // Opcional: tradução para português embaixo de cada linha.
+  import { untrack } from "svelte";
   import type { Translation } from "../lib/api";
   import { lineAt, loadLyrics, lyricsPrefs, sameLanguage, translateSet, type LyricSet } from "../lib/lyrics.svelte";
   import { player } from "../lib/player.svelte";
@@ -21,11 +22,12 @@
   const fmtOffset = (o: number) => (o > 0 ? "+" : "") + o.toFixed(1).replace(".", ",") + " s";
   const showTr = $derived(lyricsPrefs.translate && !!tr && !sameLanguage(tr));
 
-  // Carrega a letra da faixa atual (de novo quando a duração fica conhecida).
+  // Carrega a letra só quando a faixa (ou a duração dela) muda — não a cada
+  // atualização de tempo do player.
+  const trackKey = $derived(`${player.state.videoId}:${Math.round(player.state.duration)}`);
   $effect(() => {
-    const st = player.state;
-    st.videoId;
-    st.duration > 0;
+    trackKey;
+    const st = untrack(() => player.state);
     set = undefined;
     tr = undefined;
     following = true;
@@ -37,7 +39,7 @@
   // Tradução sob demanda.
   $effect(() => {
     if (!lyricsPrefs.translate || !set) return;
-    const vid = player.state.videoId;
+    const vid = untrack(() => player.state.videoId);
     const current = set;
     tr = undefined;
     translateSet(vid, current).then((t) => {

@@ -637,8 +637,10 @@
       artistId: artistLinks[0]?.href.split("/").pop() ?? "",
       albumId: albumA?.href.split("/").pop() ?? "",
       thumb: art,
-      duration: Number.isFinite(v?.duration) ? v.duration : 0,
-      time: v?.currentTime ?? 0,
+      // Tempo e duração da API do player (sempre da mesma faixa que videoId).
+      // Na troca de faixa o <video> ainda pode ter a duração da anterior;
+      // getDuration() fica 0 até a nova carregar, e a UI espera.
+      ...timing(p, v),
       playing: !!v && !v.paused && !v.ended,
       volume: p?.getVolume?.() ?? 100,
       muted: !!p?.isMuted?.(),
@@ -646,6 +648,16 @@
       repeat: repeatOne ? "ONE" : "NONE",
       at: Date.now(),
     };
+  }
+
+  function timing(p, v) {
+    const hasApi = typeof p?.getDuration === "function";
+    const pd = hasApi ? Number(p.getDuration()) : NaN;
+    const pt = typeof p?.getCurrentTime === "function" ? Number(p.getCurrentTime()) : NaN;
+    const duration = hasApi ? (pd > 0 ? pd : 0) : Number.isFinite(v?.duration) ? v.duration : 0;
+    let time = Number.isFinite(pt) ? pt : v?.currentTime ?? 0;
+    if (duration > 0) time = Math.min(time, duration);
+    return { duration, time };
   }
 
   let repeatOne = false;
@@ -669,11 +681,12 @@
    * (troca de faixa sem evento, seek interno, buffer etc.).
    */
   function onTimeUpdate(e) {
-    const v = e.currentTarget;
     const now = Date.now();
+    const p = player();
+    const { time } = timing(p, e.currentTarget);
     const expected = last.playing ? last.time + (now - last.at) / 1000 : last.time;
-    const vid = player()?.getVideoData?.()?.video_id ?? "";
-    if (vid !== last.videoId || Math.abs(v.currentTime - expected) > 1.5 || now - last.at > 5000) emitState();
+    const vid = p?.getVideoData?.()?.video_id ?? "";
+    if (vid !== last.videoId || Math.abs(time - expected) > 1.0 || now - last.at > 5000) emitState();
   }
 
   // Detecta troca de faixa no instante em que o YT Music atualiza o mediaSession.
@@ -691,7 +704,7 @@
   function hookVideo(v) {
     if (!v || v.__ymdHooked) return;
     v.__ymdHooked = true;
-    for (const ev of ["play", "pause", "ended", "seeked", "loadedmetadata", "durationchange", "ratechange", "volumechange", "emptied"])
+    for (const ev of ["play", "playing", "pause", "waiting", "ended", "seeked", "loadedmetadata", "durationchange", "ratechange", "volumechange", "emptied"])
       v.addEventListener(ev, emitState);
     v.addEventListener("timeupdate", onTimeUpdate);
     // O YT Music pode resetar o loop ao trocar de faixa: reaplica o modo escolhido.

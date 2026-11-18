@@ -61,6 +61,8 @@ class Player {
 
   #apply(s: PlayerState) {
     this.#lastUpdate = Date.now();
+    // Faixa nova: descarta qualquer arraste em andamento da faixa anterior.
+    if (s.videoId !== this.state.videoId) this.#seeking = false;
     this.state = s;
     if (!this.#seeking) this.time = s.time;
     this.#syncTimer();

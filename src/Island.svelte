@@ -4,7 +4,7 @@
   //  - compacta: capa + letra passando
   //  - mouse por cima: abre com título, letra e controles
   //  - botão direito: recolhe num traço discreto; clique de novo para voltar
-  import { onMount, tick } from "svelte";
+  import { onMount, tick, untrack } from "svelte";
   import { backOut } from "svelte/easing";
   import { fade, fly } from "svelte/transition";
   import Cover from "./components/Cover.svelte";
@@ -41,11 +41,11 @@
   const ticker = $derived(trLine || line || [s.title, s.artist].filter(Boolean).join(" — "));
   const progress = $derived(s.duration ? Math.min(100, (player.time / s.duration) * 100) : 0);
 
-  // Busca a letra quando a faixa muda (ou quando a duração fica conhecida).
+  // Busca a letra só quando a faixa (ou a duração dela) muda.
+  const trackKey = $derived(`${player.state.videoId}:${Math.round(player.state.duration)}`);
   $effect(() => {
-    const st = player.state;
-    st.videoId;
-    st.duration > 0;
+    trackKey;
+    const st = untrack(() => player.state);
     lyrics = null;
     loadLyrics(st).then((l) => {
       if (l && player.state.videoId === st.videoId) lyrics = l;
@@ -56,7 +56,7 @@
     tr = null;
     if (!lyricsPrefs.translate || !lyrics) return;
     const current = lyrics;
-    translateSet(player.state.videoId, current).then((t) => {
+    translateSet(untrack(() => player.state.videoId), current).then((t) => {
       if (lyrics === current) tr = t;
     });
   });
