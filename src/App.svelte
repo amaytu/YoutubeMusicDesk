@@ -34,13 +34,22 @@
       player.prev();
     }
   }
-  // Botões "voltar" do mouse.
+  // Botão "voltar" do mouse.
   function onMouse(e: MouseEvent) {
     if (e.button === 3) router.back();
   }
 </script>
 
 <svelte:window onkeydown={onKey} onmouseup={onMouse} />
+
+<!-- Refração do "liquid glass": desloca levemente o que está atrás do vidro. -->
+<svg class="defs" aria-hidden="true">
+  <filter id="lg-refract" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.006 0.009" numOctaves="2" seed="11" result="noise" />
+    <feGaussianBlur in="noise" stdDeviation="3" result="soft" />
+    <feDisplacementMap in="SourceGraphic" in2="soft" scale="30" xChannelSelector="R" yChannelSelector="G" />
+  </filter>
+</svg>
 
 <div class="app">
   <Background src={player.state.thumb} />
@@ -54,8 +63,8 @@
         {:else if r.name === "artists"}<Artists />
         {:else if r.name === "playlists"}<Playlists />
         {:else if r.name === "search"}<Search q={r.q} />
-        {:else if r.name === "artist"}<Artist id={r.id} />
-        {:else if r.name === "collection"}<Collection id={r.id} />
+        {:else if r.name === "artist"}<Artist id={r.id} hint={r} />
+        {:else if r.name === "collection"}<Collection id={r.id} hint={r} />
         {/if}
       </div>
     {/key}
@@ -66,28 +75,28 @@
 </div>
 
 <style>
+  .defs {
+    position: absolute;
+    width: 0;
+    height: 0;
+  }
   .app {
     position: relative;
     height: 100%;
     display: grid;
-    grid-template-rows: var(--titlebar) minmax(0, 1fr) var(--playerbar);
+    grid-template-rows: var(--titlebar) minmax(0, 1fr);
     grid-template-columns: minmax(0, 1fr);
     overflow: hidden;
   }
+  /* O conteúdo vai até o fim da janela e rola por baixo do player de vidro. */
   main {
     position: relative;
     z-index: 1;
     min-height: 0;
     min-width: 0;
+    view-transition-name: page;
   }
   .view {
     height: 100%;
-    animation: view-in 0.22s var(--ease);
-  }
-  @keyframes view-in {
-    from {
-      opacity: 0;
-      transform: translateY(6px);
-    }
   }
 </style>

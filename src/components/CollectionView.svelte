@@ -4,6 +4,7 @@
   import { api } from "../lib/api";
   import { player } from "../lib/player.svelte";
   import { router } from "../lib/router.svelte";
+  import type { Hint } from "../lib/router.svelte";
   import type { Collection } from "../lib/types";
   import Cover from "./Cover.svelte";
   import Icon from "./Icon.svelte";
@@ -13,8 +14,9 @@
   let {
     id,
     layout = "page",
+    hint,
     onclose,
-  }: { id: string; layout?: "page" | "panel"; onclose?: () => void } = $props();
+  }: { id: string; layout?: "page" | "panel"; hint?: Hint; onclose?: () => void } = $props();
 
   let attempt = $state(0);
   const data = $derived.by(() => { attempt; return api.collection(id); });
@@ -23,10 +25,13 @@
 
 <div class="wrap {layout}">
   {#await data}
+    <!-- Enquanto carrega, a capa/título da tela anterior já aparecem (e a capa "voa" até aqui). -->
     <div class="head">
-      <div class="art skeleton"></div>
+      <div class="art" class:skeleton={!hint?.thumb} style:view-transition-name={layout === "page" ? "hero-cover" : undefined}>
+        {#if hint?.thumb}<Cover src={hint.thumb} size={layout === "page" ? 544 : 400} eager />{/if}
+      </div>
       <div class="meta">
-        <div class="skeleton" style="height:28px;width:60%"></div>
+        {#if hint?.title}<h1>{hint.title}</h1>{:else}<div class="skeleton" style="height:28px;width:60%"></div>{/if}
         <div class="skeleton" style="height:16px;width:40%;margin-top:10px"></div>
       </div>
     </div>
@@ -43,7 +48,9 @@
     <button class="icon-btn close" onclick={onclose} aria-label="Fechar"><Icon name="close" size={18} /></button>
   {/if}
   <div class="head">
-    <div class="art"><Cover src={c.thumb} size={layout === "page" ? 544 : 400} eager icon={isAlbum ? "album" : "playlist"} /></div>
+    <div class="art" style:view-transition-name={layout === "page" ? "hero-cover" : undefined}>
+      <Cover src={c.thumb || hint?.thumb} size={layout === "page" ? 544 : 400} eager icon={isAlbum ? "album" : "playlist"} />
+    </div>
     <div class="meta">
       <span class="kind">{c.subtitle || (isAlbum ? "Álbum" : "Playlist")}</span>
       <h1>{c.title}</h1>
@@ -76,12 +83,14 @@
 <style>
   .wrap {
     position: relative;
-    animation: enter 0.28s var(--ease);
+  }
+  .panel {
+    animation: enter 0.4s var(--spring);
   }
   @keyframes enter {
     from {
       opacity: 0;
-      transform: translateY(8px);
+      transform: translateY(10px) scale(0.98);
     }
   }
   .close {
@@ -101,10 +110,13 @@
     flex: none;
     aspect-ratio: 1;
   }
-  .art :global(.cover),
-  .art.skeleton {
-    border-radius: 12px;
-    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+  .art {
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 24px 50px -10px rgba(0, 0, 0, 0.6);
+  }
+  .art :global(.cover) {
+    border-radius: 16px;
   }
   .meta {
     min-width: 0;

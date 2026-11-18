@@ -1,5 +1,7 @@
 <script lang="ts">
   // Grade da biblioteca com painel lateral de faixas (álbuns e playlists).
+  import { openItem } from "../lib/actions";
+  import { sheen } from "../lib/fx.svelte";
   import { player } from "../lib/player.svelte";
   import type { AlbumItem, Item, PlaylistItem } from "../lib/types";
   import { keepScroll, plural } from "../lib/util";
@@ -36,13 +38,11 @@
     return out;
   }
 
-  function select(item: Item) {
+  function select(item: Item, coverEl?: HTMLElement) {
     // Janela estreita: abre a página; larga: painel ao lado.
-    if (window.innerWidth < 1100) {
-      import("../lib/actions").then((m) => m.openItem(item));
-      return;
-    }
-    selected = selected === (item as Entry).id ? null : (item as Entry).id;
+    if (window.innerWidth < 1100) return openItem(item, coverEl);
+    const id = (item as Entry).id;
+    selected = selected === id ? null : id;
   }
 </script>
 
@@ -52,11 +52,11 @@
       <h1>{title}</h1>
       {#await data then items}<span class="count">{plural(items.length, noun[0], noun[1])}</span>{/await}
       <span class="grow"></span>
-      <label class="filter">
+      <label class="field">
         <Icon name="filter" size={15} />
         <input bind:value={filter} placeholder="Filtrar" spellcheck="false" />
       </label>
-      <label class="sort">
+      <label class="field">
         <Icon name="sort" size={15} />
         <select bind:value={sortId}>
           <option value="default">Recentes</option>
@@ -91,7 +91,7 @@
   </div>
 
   {#if selected}
-    <aside class="panel glass">
+    <aside class="panel glass" use:sheen>
       {#key selected}
         <CollectionView id={selected} layout="panel" onclose={() => (selected = null)} />
       {/key}
@@ -135,38 +135,11 @@
   .grow {
     flex: 1;
   }
-  .filter,
-  .sort {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    height: 32px;
-    padding: 0 10px;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid var(--line);
-    color: var(--muted);
-  }
-  .filter input,
-  .sort select {
-    background: none;
-    border: 0;
-    outline: 0;
-    color: var(--text);
-    width: 130px;
-  }
-  .sort select {
-    width: auto;
-    cursor: pointer;
-  }
-  .sort option {
-    background: #1a1a22;
-  }
   .scroll {
     flex: 1;
     overflow-y: auto;
-    padding: 2px 6px 24px 2px;
-    margin-right: -6px;
+    padding: 8px 8px var(--player-space) 6px;
+    margin: 0 -6px 0 -6px;
   }
   .grid {
     display: grid;
@@ -179,14 +152,18 @@
   .panel {
     overflow-y: auto;
     padding: 20px 16px;
-    margin-bottom: 16px;
-    background: rgba(12, 12, 18, 0.55);
-    animation: slide 0.25s var(--ease);
+    margin-bottom: var(--player-space);
+    border-radius: var(--radius-xl);
+    animation: slide 0.5s var(--spring);
+  }
+  .panel > :global(*) {
+    position: relative;
+    z-index: 2;
   }
   @keyframes slide {
     from {
       opacity: 0;
-      transform: translateX(16px);
+      transform: translateX(30px) scale(0.97);
     }
   }
 </style>

@@ -96,30 +96,6 @@
   .grow {
     flex: 1;
   }
-  .field {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    height: 32px;
-    padding: 0 10px;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid var(--line);
-    color: var(--muted);
-  }
-  .field input,
-  .field select {
-    background: none;
-    border: 0;
-    outline: 0;
-    color: var(--text);
-  }
-  .field input {
-    width: 140px;
-  }
-  .field option {
-    background: #1a1a22;
-  }
   .head-row {
     display: grid;
     grid-template-columns: 44px minmax(0, 2.2fr) minmax(0, 1.4fr) minmax(0, 1.4fr) 56px;
@@ -137,7 +113,7 @@
   .scroll {
     flex: 1;
     overflow-y: auto;
-    padding: 6px 0 24px;
+    padding: 6px 0 var(--player-space);
   }
   @media (max-width: 1100px) {
     .head-row {

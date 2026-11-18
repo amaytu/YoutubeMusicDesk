@@ -7,10 +7,13 @@
   import { api } from "../lib/api";
   import { player } from "../lib/player.svelte";
   import { router } from "../lib/router.svelte";
+  import type { Hint } from "../lib/router.svelte";
   import type { AlbumItem, ArtistPage } from "../lib/types";
+  import { openItem } from "../lib/actions";
+  import { sheen } from "../lib/fx.svelte";
   import { thumb } from "../lib/util";
 
-  let { id }: { id: string } = $props();
+  let { id, hint }: { id: string; hint?: Hint } = $props();
   let attempt = $state(0);
   const data = $derived.by(() => { attempt; return api.artist(id); });
 
@@ -29,14 +32,19 @@
 
 {#await data}
   <div class="page">
-    <div class="hero"><div class="avatar skeleton"></div><div class="skeleton" style="height:36px;width:260px"></div></div>
+    <div class="hero glass">
+      <div class="avatar" class:skeleton={!hint?.thumb} style:view-transition-name="hero-cover">
+        {#if hint?.thumb}<Cover src={hint.thumb} size={240} round eager icon="user" />{/if}
+      </div>
+      {#if hint?.title}<h1>{hint.title}</h1>{:else}<div class="skeleton" style="height:36px;width:260px"></div>{/if}
+    </div>
   </div>
 {:then a}
   {@const disco = discography(a)}
   <div class="page">
-    <header class="hero">
+    <header class="hero glass">
       <img class="banner" src={thumb(a.thumb, 120)} alt="" aria-hidden="true" />
-      <div class="avatar"><Cover src={a.thumb} size={240} round eager icon="user" /></div>
+      <div class="avatar" style:view-transition-name="hero-cover"><Cover src={a.thumb || hint?.thumb} size={240} round eager icon="user" /></div>
       <div class="who">
         <h1>{a.name}</h1>
         <div class="muted">{[a.subscribers, a.monthlyListeners].filter(Boolean).join(" • ")}</div>
@@ -56,12 +64,12 @@
       <aside class="disco">
         <div class="col-head"><span class="section-title">Discografia</span><span class="muted">{disco.length}</span></div>
         <div class="disco-list">
-          <button class="disc top" class:sel={selected === "top"} onclick={() => (selected = "top")}>
+          <button class="disc top sheen" use:sheen class:sel={selected === "top"} onclick={() => (selected = "top")}>
             <span class="disc-title">Mais tocadas</span>
             <span class="disc-sub">{a.songs.length} músicas</span>
           </button>
           {#each disco as al (al.id)}
-            <button class="disc" class:sel={selected === al.id} onclick={() => (selected = al.id)}>
+            <button class="disc sheen" use:sheen class:sel={selected === al.id} onclick={() => (selected = al.id)}>
               <img src={thumb(al.thumb, 226)} alt="" loading="lazy" decoding="async" />
               <span class="disc-title ellipsis">{al.title}</span>
               <span class="disc-sub">{year(al)}</span>
@@ -71,7 +79,7 @@
       </aside>
 
       <!-- Faixas -->
-      <section class="center glass">
+      <section class="center glass" use:sheen>
         {#if selected === "top"}
           <div class="center-head">
             <h2>Mais tocadas</h2>
@@ -119,7 +127,7 @@
           <div class="col-head"><span class="section-title">Artistas semelhantes</span></div>
           <div class="related">
             {#each a.related.slice(0, 6) as r (r.id)}
-              <button class="rel" onclick={() => router.go({ name: "artist", id: r.id })} title={r.title}>
+              <button class="rel" onclick={(e) => openItem(r, e.currentTarget.querySelector(".cover"))} title={r.title}>
                 <Cover src={r.thumb} size={160} round icon="user" />
                 <span class="ellipsis">{r.title}</span>
               </button>
@@ -149,15 +157,8 @@
     height: 100%;
     display: flex;
     flex-direction: column;
-    padding: 0 20px 16px;
+    padding: 0 20px var(--player-space);
     gap: 14px;
-    animation: enter 0.3s var(--ease);
-  }
-  @keyframes enter {
-    from {
-      opacity: 0;
-      transform: translateY(8px);
-    }
   }
   .hero {
     position: relative;
@@ -165,10 +166,13 @@
     align-items: center;
     gap: 22px;
     padding: 18px 22px;
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-xl);
     overflow: hidden;
-    isolation: isolate;
     flex: none;
+  }
+  .hero > :not(.banner) {
+    position: relative;
+    z-index: 2;
   }
   .banner {
     position: absolute;
@@ -176,15 +180,16 @@
     width: 140%;
     height: 140%;
     object-fit: cover;
-    filter: blur(30px) brightness(0.45) saturate(1.3);
-    z-index: -1;
+    filter: blur(30px) brightness(0.5) saturate(1.4);
+    opacity: 0.85;
+    z-index: 0;
   }
   .avatar {
     width: 104px;
     height: 104px;
     border-radius: 50%;
     flex: none;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.18), 0 14px 34px rgba(0, 0, 0, 0.55);
   }
   .who {
     min-width: 0;
@@ -229,7 +234,7 @@
     position: relative;
     height: 66px;
     flex: none;
-    border-radius: 10px;
+    border-radius: 16px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -237,16 +242,18 @@
     align-items: flex-end;
     padding: 0 14px;
     text-align: right;
-    border: 1px solid var(--line);
     background: rgba(255, 255, 255, 0.04);
-    transition: border-color 0.15s, transform 0.15s var(--ease);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.18) inset, 0 0 0 1px rgba(255, 255, 255, 0.07) inset;
+    transition: box-shadow 0.25s, transform 0.4s var(--spring);
   }
   .disc:hover {
-    transform: translateX(2px);
+    transform: translateX(4px) scale(1.01);
+  }
+  .disc:active {
+    transform: scale(0.97);
   }
   .disc.sel {
-    border-color: var(--accent);
-    box-shadow: inset 0 0 0 1px var(--accent);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.3) inset, 0 0 0 1.5px var(--accent) inset, 0 8px 24px -8px var(--accent-glow);
   }
   .disc img {
     position: absolute;
@@ -257,11 +264,12 @@
     object-position: center 35%;
     filter: brightness(0.42) saturate(1.2);
     z-index: 0;
-    transition: filter 0.2s;
+    transition: filter 0.3s, transform 0.6s var(--ease);
   }
   .disc:hover img,
   .disc.sel img {
-    filter: brightness(0.55) saturate(1.3);
+    filter: brightness(0.58) saturate(1.35);
+    transform: scale(1.06);
   }
   .disc.top {
     background: linear-gradient(120deg, rgba(43, 196, 212, 0.35), rgba(124, 58, 237, 0.3));
@@ -284,7 +292,6 @@
     min-height: 0;
     overflow-y: auto;
     padding: 14px 16px;
-    background: rgba(12, 12, 18, 0.5);
   }
   .center-head {
     display: flex;
@@ -318,10 +325,12 @@
     width: 76px;
     flex: none;
     opacity: 0.55;
-    transition: width 0.25s var(--ease), opacity 0.2s, transform 0.2s;
+    border-radius: 10px;
+    transition: width 0.5s var(--spring), opacity 0.25s, transform 0.4s var(--spring);
   }
   .strip-item:hover {
-    opacity: 0.85;
+    opacity: 0.9;
+    transform: translateY(-3px) rotate(-1.5deg);
   }
   .strip-item.sel {
     width: 128px;
@@ -366,11 +375,15 @@
   }
   .stat {
     padding: 12px 10px;
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03));
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.22) inset, 0 0 0 1px rgba(255, 255, 255, 0.06) inset;
     display: flex;
     flex-direction: column;
+    transition: transform 0.4s var(--spring);
+  }
+  .stat:hover {
+    transform: translateY(-3px);
   }
   .stat b {
     font: 700 26px var(--font-display);

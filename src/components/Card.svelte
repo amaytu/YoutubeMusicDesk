@@ -1,5 +1,8 @@
 <script lang="ts">
-  import { openItem, playItem } from "../lib/actions";
+  // Card de vidro: inclina seguindo o ponteiro, brilho especular, capa com zoom
+  // e "voo" da capa até a próxima tela ao clicar.
+  import { openItem, playItem, prefetch } from "../lib/actions";
+  import { tilt } from "../lib/fx.svelte";
   import type { Item } from "../lib/types";
   import Cover from "./Cover.svelte";
   import Icon from "./Icon.svelte";
@@ -8,15 +11,30 @@
     item,
     selected = false,
     onselect,
-  }: { item: Item; selected?: boolean; onselect?: (item: Item) => void } = $props();
+  }: { item: Item; selected?: boolean; onselect?: (item: Item, coverEl: HTMLElement) => void } = $props();
 
   const round = $derived(item.kind === "artist");
   const icon = $derived(item.kind === "artist" ? "user" : item.kind === "playlist" ? "playlist" : item.kind === "album" ? "album" : "note");
+  let artEl = $state<HTMLElement>();
+  let hoverTimer: ReturnType<typeof setTimeout>;
+
+  function open() {
+    if (onselect) onselect(item, artEl!);
+    else openItem(item, artEl);
+  }
 </script>
 
-<div class="card" class:round class:selected>
-  <button class="hit" onclick={() => (onselect ? onselect(item) : openItem(item))} title={item.title}>
-    <div class="art">
+<div
+  class="card sheen"
+  role="group"
+  class:round
+  class:selected
+  use:tilt
+  onpointerenter={() => (hoverTimer = setTimeout(() => prefetch(item), 180))}
+  onpointerleave={() => clearTimeout(hoverTimer)}
+>
+  <button class="hit" onclick={open} title={item.title}>
+    <div class="art" bind:this={artEl}>
       <Cover src={item.thumb} size={264} {round} {icon} />
     </div>
     <div class="text">
@@ -34,19 +52,38 @@
     position: relative;
     padding: 10px;
     border-radius: var(--radius-lg);
-    background: rgba(255, 255, 255, 0.035);
-    border: 1px solid transparent;
-    transition: background 0.18s, border-color 0.18s, transform 0.18s var(--ease);
-    /* cqw = largura do card: posiciona o botão de play sobre a capa. */
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015));
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+    transform: perspective(700px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+    transition:
+      transform 0.5s var(--spring),
+      background 0.3s,
+      box-shadow 0.3s;
+    /* cqw = largura do conteúdo do card (= largura da capa) */
     container-type: inline-size;
+    --sheen-size: 260px;
   }
   .card:hover {
-    background: rgba(255, 255, 255, 0.08);
-    transform: translateY(-2px);
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.04));
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.3) inset,
+      0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+      0 22px 40px -16px rgba(0, 0, 0, 0.65);
+    transform: perspective(700px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(-4px);
+    transition:
+      transform 0.25s var(--ease),
+      background 0.3s,
+      box-shadow 0.3s;
+  }
+  .card:active {
+    transform: perspective(700px) scale(0.97);
   }
   .card.selected {
-    border-color: rgba(43, 196, 212, 0.55);
-    background: var(--accent-soft);
+    background: linear-gradient(160deg, rgba(52, 211, 226, 0.24), rgba(52, 211, 226, 0.06));
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.3) inset,
+      0 0 0 1px rgba(52, 211, 226, 0.55) inset,
+      0 14px 34px -14px var(--accent-glow);
   }
   .hit {
     display: block;
@@ -54,8 +91,15 @@
     text-align: left;
   }
   .art {
-    border-radius: 8px;
-    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
+  }
+  .art :global(img) {
+    transition: transform 0.6s var(--ease), opacity 0.25s;
+  }
+  .card:hover .art :global(img) {
+    transform: scale(1.07);
   }
   .round .art {
     border-radius: 50%;
@@ -76,20 +120,23 @@
   }
   .play {
     position: absolute;
-    /* cqw usa a caixa de conteúdo do card (= largura da capa). */
-    right: 21px;
-    top: calc(100cqw - 41px);
-    width: 42px;
-    height: 42px;
+    z-index: 2;
+    right: 18px;
+    top: calc(100cqw - 42px);
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     display: grid;
     place-items: center;
-    background: var(--accent);
-    color: #031418;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+    color: #03161a;
+    background: radial-gradient(circle at 35% 25%, #9ff5fc, var(--accent) 60%, #1aa8b8);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 10px 22px -6px rgba(0, 0, 0, 0.6);
     opacity: 0;
-    transform: translateY(6px);
-    transition: opacity 0.18s, transform 0.18s var(--ease);
+    transform: translateY(10px) scale(0.6);
+    transition:
+      opacity 0.2s,
+      transform 0.45s var(--spring),
+      box-shadow 0.2s;
   }
   .round .play {
     display: none;
@@ -99,6 +146,10 @@
     transform: none;
   }
   .play:hover {
-    filter: brightness(1.1);
+    transform: scale(1.12) !important;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 12px 28px -6px var(--accent-glow);
+  }
+  .play:active {
+    transform: scale(0.9) !important;
   }
 </style>

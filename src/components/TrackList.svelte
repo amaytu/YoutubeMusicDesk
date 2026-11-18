@@ -112,9 +112,9 @@
     gap: 14px;
     height: 54px;
     padding: 0 12px 0 8px;
-    border-radius: 8px;
+    border-radius: 14px;
     cursor: default;
-    transition: background 0.12s;
+    transition: background 0.25s, box-shadow 0.25s, transform 0.35s var(--spring);
     /* Listas longas: o navegador só desenha o que está visível. */
     content-visibility: auto;
     contain-intrinsic-size: auto 54px;
@@ -130,10 +130,16 @@
     background: rgba(255, 255, 255, 0.02);
   }
   .row:hover {
-    background: rgba(255, 255, 255, 0.07);
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.04));
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.14) inset, 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+    transform: translateX(3px);
+  }
+  .row:active {
+    transform: scale(0.99);
   }
   .row.active {
-    background: var(--accent-soft);
+    background: linear-gradient(90deg, rgba(52, 211, 226, 0.22), rgba(52, 211, 226, 0.05));
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.16) inset, 0 0 0 1px rgba(52, 211, 226, 0.3) inset;
   }
   .row.active .title {
     color: var(--accent);
@@ -153,7 +159,7 @@
     width: 100%;
   }
   .thumb :global(.cover) {
-    border-radius: 6px;
+    border-radius: 8px;
   }
   .num {
     color: var(--muted);
@@ -164,10 +170,11 @@
     inset: 0;
     display: grid;
     place-items: center;
-    border-radius: 6px;
-    background: rgba(0, 0, 0, 0.5);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.45);
     opacity: 0;
-    transition: opacity 0.12s;
+    transform: scale(0.6);
+    transition: opacity 0.2s, transform 0.4s var(--spring);
   }
   .playbtn.solo {
     background: none;
@@ -177,6 +184,7 @@
   .row:hover .playbtn,
   .row.active .playbtn {
     opacity: 1;
+    transform: none;
   }
   .row.active .playbtn {
     background: rgba(0, 0, 0, 0.55);

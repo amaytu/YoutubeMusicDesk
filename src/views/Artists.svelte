@@ -70,27 +70,10 @@
   .grow {
     flex: 1;
   }
-  .field {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    height: 32px;
-    padding: 0 10px;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid var(--line);
-    color: var(--muted);
-  }
-  .field input {
-    background: none;
-    border: 0;
-    outline: 0;
-    width: 140px;
-  }
   .scroll {
     flex: 1;
     overflow-y: auto;
-    padding: 2px 2px 24px;
+    padding: 8px 8px var(--player-space);
   }
   .grid {
     display: grid;

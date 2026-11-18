@@ -1,4 +1,6 @@
 <script lang="ts">
+  // Player flutuante em cápsula de vidro; o conteúdo rola por baixo dele.
+  import { sheen } from "../lib/fx.svelte";
   import { player } from "../lib/player.svelte";
   import { router } from "../lib/router.svelte";
   import { fmtTime } from "../lib/util";
@@ -10,70 +12,72 @@
   const volIcon = $derived(s.muted || s.volume === 0 ? "mute" : s.volume < 50 ? "volume-low" : "volume");
 
   function openNow(tab: "art" | "queue" | "lyrics") {
-    player.nowPlaying = player.nowPlaying === tab ? null : tab;
+    player.openNow(player.nowPlaying === tab ? null : tab);
   }
 </script>
 
-<footer class="bar">
+<footer class="dock glass" use:sheen>
   <div class="info">
-    <button class="art" onclick={() => openNow("art")} title="Tocando agora" disabled={!player.hasTrack}>
-      <Cover src={s.thumb} size={120} eager />
+    <button
+      class="art"
+      onclick={() => openNow("art")}
+      title="Tocando agora"
+      disabled={!player.hasTrack}
+      style:view-transition-name={player.nowPlaying ? "none" : "np-cover"}
+    >
+      {#key s.thumb}
+        <div class="art-in"><Cover src={s.thumb} size={120} eager /></div>
+      {/key}
       <span class="expand"><Icon name="expand" size={16} /></span>
     </button>
     {#if player.hasTrack}
-      <div class="meta">
-        <div class="title ellipsis">{s.title}</div>
-        <div class="sub ellipsis">
-          {#if s.artistId}
-            <button class="link muted" onclick={() => router.go({ name: "artist", id: s.artistId })}>{s.artist}</button>
-          {:else}
-            <span class="muted">{s.artist}</span>
-          {/if}
-        </div>
-        {#if s.album}
+      {#key s.videoId}
+        <div class="meta">
+          <div class="title ellipsis">{s.title}</div>
           <div class="sub ellipsis">
-            {#if s.albumId}
-              <button class="link faint" onclick={() => router.go({ name: "collection", id: s.albumId })}>{s.album}</button>
-            {:else}<span class="faint">{s.album}</span>{/if}
+            {#if s.artistId}
+              <button class="link muted" onclick={() => router.go({ name: "artist", id: s.artistId })}>{s.artist}</button>
+            {:else}
+              <span class="muted">{s.artist}</span>
+            {/if}
+            {#if s.album}
+              <span class="dot">·</span>
+              {#if s.albumId}
+                <button class="link faint" onclick={() => router.go({ name: "collection", id: s.albumId, thumb: s.thumb, title: s.album })}>{s.album}</button>
+              {:else}<span class="faint">{s.album}</span>{/if}
+            {/if}
           </div>
-        {/if}
-      </div>
+        </div>
+      {/key}
     {:else}
       <div class="meta"><div class="muted">Nada tocando</div></div>
     {/if}
   </div>
 
-  <div class="controls">
-    <button class="icon-btn" onclick={() => player.prev()} title="Anterior"><Icon name="prev" size={18} /></button>
-    <button class="play" onclick={() => player.toggle()} title={s.playing ? "Pausar" : "Tocar"} disabled={!player.hasTrack}>
-      <Icon name={s.playing ? "pause" : "play"} size={20} />
-    </button>
-    <button class="icon-btn" onclick={() => player.next()} title="Próxima"><Icon name="next" size={18} /></button>
-  </div>
-
-  <div class="progress">
-    <span class="time">{fmtTime(player.time)}</span>
-    <Range
-      label="Posição"
-      value={player.time}
-      max={s.duration || 1}
-      step={0.5}
-      oninput={(v) => player.scrub(v)}
-      onchange={(v) => player.seek(v)}
-    />
-    <span class="time">{fmtTime(s.duration)}</span>
-  </div>
-
-  <div class="modes">
-    <button class="pill" onclick={() => player.shuffle()} title="Aleatório"><Icon name="shuffle" size={16} /></button>
-    <button class="icon-btn" class:on={s.repeat !== "NONE"} onclick={() => player.cycleRepeat()} title="Repetir">
-      <Icon name="repeat" size={18} />
-      {#if s.repeat === "ONE"}<span class="one">1</span>{/if}
-    </button>
+  <div class="center">
+    <div class="controls">
+      <button class="icon-btn small" onclick={() => player.shuffle()} title="Aleatório"><Icon name="shuffle" size={16} /></button>
+      <button class="icon-btn" onclick={() => player.prev()} title="Anterior"><Icon name="prev" size={18} /></button>
+      <button class="play" class:playing={s.playing} onclick={() => player.toggle()} title={s.playing ? "Pausar" : "Tocar"} disabled={!player.hasTrack}>
+        <span class="ico" class:swap={s.playing}>
+          <Icon name={s.playing ? "pause" : "play"} size={20} />
+        </span>
+      </button>
+      <button class="icon-btn" onclick={() => player.next()} title="Próxima"><Icon name="next" size={18} /></button>
+      <button class="icon-btn small" class:on={s.repeat !== "NONE"} onclick={() => player.cycleRepeat()} title="Repetir">
+        <Icon name="repeat" size={16} />
+        {#if s.repeat === "ONE"}<span class="one">1</span>{/if}
+      </button>
+    </div>
+    <div class="progress">
+      <span class="time">{fmtTime(player.time)}</span>
+      <Range label="Posição" value={player.time} max={s.duration || 1} step={0.5} oninput={(v) => player.scrub(v)} onchange={(v) => player.seek(v)} />
+      <span class="time">{fmtTime(s.duration)}</span>
+    </div>
   </div>
 
   <div class="extras">
-    <button class="icon-btn" class:on={s.liked} onclick={() => player.like()} title="Curtir">
+    <button class="icon-btn heart" class:on={s.liked} class:pop={s.liked} onclick={() => player.like()} title="Curtir">
       <Icon name={s.liked ? "heart-fill" : "heart"} size={18} />
     </button>
     <div class="volume">
@@ -92,17 +96,24 @@
 </footer>
 
 <style>
-  .bar {
-    position: relative;
+  .dock {
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    bottom: 14px;
     z-index: 15;
     height: var(--playerbar);
     display: grid;
-    grid-template-columns: minmax(200px, 300px) auto 1fr auto auto;
+    grid-template-columns: minmax(200px, 1fr) minmax(320px, 2.2fr) minmax(200px, 1fr);
     align-items: center;
     gap: 18px;
-    padding: 0 18px 0 14px;
-    background: rgba(10, 10, 14, 0.55);
-    border-top: 1px solid var(--line);
+    padding: 0 16px 0 10px;
+    border-radius: var(--radius-xl);
+    --sheen-size: 320px;
+  }
+  .dock > * {
+    position: relative;
+    z-index: 2;
   }
   .info {
     display: flex;
@@ -112,20 +123,34 @@
   }
   .art {
     position: relative;
-    width: 58px;
+    width: 56px;
+    height: 56px;
     flex: none;
-    border-radius: 8px;
+    border-radius: 14px;
     overflow: hidden;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+    transition: transform 0.4s var(--spring);
+  }
+  .art:hover {
+    transform: scale(1.06) rotate(-2deg);
+  }
+  .art-in {
+    animation: art-in 0.5s var(--spring);
+  }
+  @keyframes art-in {
+    from {
+      opacity: 0;
+      transform: scale(0.7) rotate(-8deg);
+    }
   }
   .expand {
     position: absolute;
     inset: 0;
     display: grid;
     place-items: center;
-    background: rgba(0, 0, 0, 0.45);
+    background: rgba(0, 0, 0, 0.4);
     opacity: 0;
-    transition: opacity 0.15s;
+    transition: opacity 0.2s;
   }
   .art:hover .expand {
     opacity: 1;
@@ -134,101 +159,164 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 1px;
+    gap: 2px;
+    animation: meta-in 0.45s var(--ease);
+  }
+  @keyframes meta-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+      filter: blur(3px);
+    }
   }
   .title {
     font-weight: 600;
-    font-size: 15px;
+    font-size: 14px;
   }
   .sub {
     font-size: 12px;
   }
+  .dot {
+    color: var(--faint);
+    margin: 0 4px;
+  }
   .faint {
     color: var(--faint);
+  }
+  .center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-width: 0;
   }
   .controls {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
   }
+  .small {
+    width: 32px;
+    height: 32px;
+  }
+  /* botão de play: orbe de vidro */
   .play {
-    width: 48px;
-    height: 48px;
+    position: relative;
+    width: 44px;
+    height: 44px;
+    margin: 0 4px;
     border-radius: 50%;
     display: grid;
     place-items: center;
-    border: 2px solid rgba(255, 255, 255, 0.85);
-    transition: transform 0.15s var(--ease), background 0.15s;
+    color: #0a0a0f;
+    background: radial-gradient(circle at 35% 25%, #fff, #e8eef5 55%, #c9d4df);
+    box-shadow: 0 1px 0 #fff inset, 0 -3px 6px rgba(0, 0, 0, 0.15) inset, 0 8px 20px -6px rgba(0, 0, 0, 0.6);
+    transition: transform 0.4s var(--spring), box-shadow 0.3s;
   }
   .play:hover {
-    background: rgba(255, 255, 255, 0.1);
-    transform: scale(1.05);
+    transform: scale(1.1);
+    box-shadow: 0 1px 0 #fff inset, 0 -3px 6px rgba(0, 0, 0, 0.15) inset, 0 10px 26px -6px rgba(255, 255, 255, 0.35);
   }
   .play:active {
-    transform: scale(0.95);
+    transform: scale(0.9);
+    transition-duration: 0.1s;
+  }
+  .play.playing::after {
+    content: "";
+    position: absolute;
+    inset: -5px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(52, 211, 226, 0.55);
+    animation: pulse 2.4s ease-out infinite;
+  }
+  @keyframes pulse {
+    0% {
+      transform: scale(0.9);
+      opacity: 0.9;
+    }
+    100% {
+      transform: scale(1.35);
+      opacity: 0;
+    }
+  }
+  .ico {
+    display: grid;
+    animation: swap 0.35s var(--spring);
+  }
+  .ico.swap {
+    animation-name: swap2;
+  }
+  @keyframes swap {
+    from {
+      transform: scale(0.4) rotate(-90deg);
+      opacity: 0;
+    }
+  }
+  @keyframes swap2 {
+    from {
+      transform: scale(0.4) rotate(90deg);
+      opacity: 0;
+    }
   }
   .progress {
     display: flex;
     align-items: center;
-    gap: 12px;
-    min-width: 0;
+    gap: 10px;
+    width: 100%;
+    max-width: 640px;
   }
   .time {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--muted);
     font-variant-numeric: tabular-nums;
-    min-width: 38px;
+    min-width: 36px;
     text-align: center;
   }
-  .modes,
   .extras {
     display: flex;
     align-items: center;
-    gap: 4px;
-  }
-  .pill {
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    display: grid;
-    place-items: center;
-    background: var(--accent);
-    color: #031418;
-    transition: transform 0.15s var(--ease), filter 0.15s;
-  }
-  .pill:hover {
-    filter: brightness(1.12);
-  }
-  .pill:active {
-    transform: scale(0.92);
-  }
-  .icon-btn {
-    position: relative;
+    justify-content: flex-end;
+    gap: 2px;
   }
   .one {
     position: absolute;
-    right: 5px;
-    bottom: 5px;
+    right: 3px;
+    bottom: 3px;
     font-size: 9px;
     font-weight: 700;
+  }
+  .heart.pop :global(svg) {
+    animation: heart 0.5s var(--spring);
+    color: #ff5c8a;
+  }
+  .heart.on {
+    color: #ff5c8a;
+    filter: drop-shadow(0 0 8px rgba(255, 92, 138, 0.5));
+  }
+  @keyframes heart {
+    40% {
+      transform: scale(1.4);
+    }
   }
   .volume {
     display: flex;
     align-items: center;
   }
   .vol-range {
-    width: 90px;
+    width: 0;
+    overflow: hidden;
+    transition: width 0.4s var(--spring);
   }
-  @media (max-width: 1180px) {
-    .vol-range {
-      display: none;
-    }
+  .volume:hover .vol-range,
+  .volume:focus-within .vol-range {
+    width: 96px;
+    overflow: visible;
   }
   @media (max-width: 1000px) {
-    .bar {
-      grid-template-columns: minmax(160px, 240px) auto 1fr auto;
+    .dock {
+      grid-template-columns: minmax(150px, 1fr) minmax(260px, 2fr) auto;
     }
-    .modes {
+    .info .meta {
       display: none;
     }
   }

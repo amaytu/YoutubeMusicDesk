@@ -81,6 +81,10 @@
   .row::-webkit-scrollbar {
     display: none;
   }
+  .row {
+    margin: 0 -8px;
+    padding: 8px 8px 12px;
+  }
   .cards {
     display: grid;
     grid-auto-flow: column;
@@ -105,14 +109,19 @@
     align-items: center;
     gap: 12px;
     padding: 6px;
-    border-radius: 10px;
+    border-radius: 14px;
     text-align: left;
     scroll-snap-align: start;
     min-width: 0;
-    transition: background 0.12s;
+    transition: background 0.25s, box-shadow 0.25s, transform 0.4s var(--spring);
   }
   .tile:hover {
-    background: rgba(255, 255, 255, 0.07);
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04));
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.18) inset, 0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+    transform: translateY(-2px);
+  }
+  .tile:active {
+    transform: scale(0.97);
   }
   .tile.active .t {
     color: var(--accent);
@@ -127,13 +136,15 @@
     inset: 0;
     display: grid;
     place-items: center;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.45);
     border-radius: 8px;
     opacity: 0;
-    transition: opacity 0.12s;
+    transform: scale(0.7);
+    transition: opacity 0.2s, transform 0.4s var(--spring);
   }
   .tile:hover .ov {
     opacity: 1;
+    transform: none;
   }
   .tile-text {
     min-width: 0;

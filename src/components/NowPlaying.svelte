@@ -1,6 +1,7 @@
 <script lang="ts">
   // Tela "Tocando agora": capa grande sobre o fundo desfocado, controles e
   // painel lateral com Fila ou Letra.
+  import { backOut } from "svelte/easing";
   import { fly } from "svelte/transition";
   import { api } from "../lib/api";
   import { player } from "../lib/player.svelte";
@@ -34,7 +35,7 @@
   });
 
   function close() {
-    player.nowPlaying = null;
+    player.openNow(null);
   }
   function goArtist() {
     if (!s.artistId) return;
@@ -45,17 +46,17 @@
 
 <svelte:window onkeydown={(e) => e.key === "Escape" && close()} />
 
-<div class="now" transition:fly={{ y: 40, duration: 260, opacity: 0 }}>
+<div class="now">
   <Background src={s.thumb} strength={1.1} />
 
   <div class="top">
     <button class="icon-btn" onclick={close} title="Fechar (Esc)"><Icon name="collapse" size={22} /></button>
     <h2>Tocando agora</h2>
     <div class="tabs">
-      <button class:on={tab === "queue"} onclick={() => (player.nowPlaying = tab === "queue" ? "art" : "queue")}>
+      <button class:on={tab === "queue"} onclick={() => player.openNow(tab === "queue" ? "art" : "queue")}>
         <Icon name="queue" size={16} /> Fila
       </button>
-      <button class:on={tab === "lyrics"} onclick={() => (player.nowPlaying = tab === "lyrics" ? "art" : "lyrics")}>
+      <button class:on={tab === "lyrics"} onclick={() => player.openNow(tab === "lyrics" ? "art" : "lyrics")}>
         <Icon name="lyrics" size={16} /> Letra
       </button>
     </div>
@@ -63,7 +64,7 @@
 
   <div class="body">
     <div class="hero">
-      <div class="big-art" class:playing={s.playing}><Cover src={s.thumb} size={544} eager /></div>
+      <div class="big-art" class:playing={s.playing} style:view-transition-name="np-cover"><Cover src={s.thumb} size={544} eager /></div>
       <div class="meta">
         <h1>{s.title || "Nada tocando"}</h1>
         <button class="link artist" onclick={goArtist}>{s.artist}</button>
@@ -72,7 +73,7 @@
     </div>
 
     {#if tab === "queue" || tab === "lyrics"}
-      <aside class="side glass" transition:fly={{ x: 30, duration: 220 }}>
+      <aside class="side glass" transition:fly={{ x: 40, duration: 380, easing: backOut }}>
         {#if tab === "queue"}
           <div class="side-head"><span class="section-title">A seguir</span><span class="muted">{queue?.length ?? ""}</span></div>
           <div class="scroll" bind:this={queueEl}>
@@ -136,6 +137,7 @@
     grid-template-rows: auto 1fr auto;
     overflow: hidden;
     background: var(--bg);
+    view-transition-name: nowplaying;
   }
   .top,
   .body,
@@ -160,6 +162,14 @@
     display: flex;
     gap: 6px;
   }
+  .tabs {
+    padding: 4px;
+    border-radius: 999px;
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03));
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.22) inset, 0 0 0 1px rgba(255, 255, 255, 0.07) inset;
+    -webkit-backdrop-filter: blur(16px) saturate(1.6);
+    backdrop-filter: blur(16px) saturate(1.6);
+  }
   .tabs button {
     display: flex;
     align-items: center;
@@ -180,7 +190,8 @@
   }
   .tabs button.on {
     color: var(--text);
-    background: rgba(255, 255, 255, 0.12);
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0.08));
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.45) inset, 0 4px 12px rgba(0, 0, 0, 0.25);
   }
   .body {
     display: flex;
@@ -204,9 +215,13 @@
   .big-art.playing {
     transform: none;
   }
+  .big-art {
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 30px 70px -10px rgba(0, 0, 0, 0.65);
+  }
   .big-art :global(.cover) {
-    border-radius: 14px;
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+    border-radius: 18px;
   }
   .meta {
     min-width: 0;
@@ -231,7 +246,10 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
-    background: rgba(12, 12, 18, 0.55);
+  }
+  .side > * {
+    position: relative;
+    z-index: 2;
   }
   .side-head {
     display: flex;
@@ -253,12 +271,13 @@
     gap: 12px;
     width: 100%;
     padding: 6px 8px;
-    border-radius: 8px;
+    border-radius: 12px;
     text-align: left;
-    transition: background 0.12s;
+    transition: background 0.2s, transform 0.35s var(--spring);
   }
   .q:hover {
-    background: rgba(255, 255, 255, 0.07);
+    background: rgba(255, 255, 255, 0.09);
+    transform: translateX(4px);
   }
   .q.sel {
     background: var(--accent-soft);
@@ -318,17 +337,18 @@
     flex: 1;
   }
   .play {
-    width: 58px;
-    height: 58px;
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
     display: grid;
     place-items: center;
-    background: #fff;
     color: #0b0b0f;
-    transition: transform 0.15s var(--ease);
+    background: radial-gradient(circle at 35% 25%, #fff, #e8eef5 55%, #c9d4df);
+    box-shadow: 0 1px 0 #fff inset, 0 -3px 6px rgba(0, 0, 0, 0.15) inset, 0 12px 28px -8px rgba(0, 0, 0, 0.6);
+    transition: transform 0.4s var(--spring);
   }
   .play:hover {
-    transform: scale(1.06);
+    transform: scale(1.1);
   }
   .play:active {
     transform: scale(0.95);

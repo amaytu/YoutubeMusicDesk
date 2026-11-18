@@ -2,6 +2,7 @@
 // O tempo de reprodução é interpolado localmente: o player oculto só avisa em
 // eventos (play, pause, seek, troca de faixa), então não há tráfego por segundo.
 import { api, onYtm, playerCmd, showLogin, signOut, clearCache } from "./api";
+import { vt } from "./fx.svelte";
 import type { Collection, PlayerState, RepeatMode, Track } from "./types";
 
 const EMPTY: PlayerState = {
@@ -69,6 +70,13 @@ class Player {
       clearInterval(this.#timer);
       this.#timer = null;
     }
+  }
+
+  /** Abre/fecha/troca a aba do "Tocando agora" com transição. */
+  openNow(tab: null | "art" | "queue" | "lyrics") {
+    const opening = (this.nowPlaying === null) !== (tab === null);
+    if (opening) vt(() => (this.nowPlaying = tab));
+    else this.nowPlaying = tab;
   }
 
   get hasTrack() {

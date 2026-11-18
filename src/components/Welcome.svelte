@@ -1,5 +1,6 @@
 <script lang="ts">
   // Primeira abertura sem conta: um clique leva ao login do Google.
+  import { backOut } from "svelte/easing";
   import { fade, scale } from "svelte/transition";
   import { player } from "../lib/player.svelte";
   import Icon from "./Icon.svelte";
@@ -23,7 +24,7 @@
 
 {#if show}
   <div class="overlay" transition:fade={{ duration: 200 }}>
-    <div class="card" in:scale={{ start: 0.96, duration: 260 }}>
+    <div class="card glass" in:scale={{ start: 0.9, duration: 420, easing: backOut }}>
       <div class="logo">
         <span></span><span></span><span></span><span></span><span></span>
       </div>
@@ -51,15 +52,16 @@
   .card {
     width: min(420px, 90vw);
     padding: 36px 32px 24px;
-    border-radius: 20px;
-    background: rgba(22, 22, 30, 0.92);
-    border: 1px solid var(--line);
-    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+    border-radius: var(--radius-xl);
     text-align: center;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 12px;
+  }
+  .card > * {
+    position: relative;
+    z-index: 2;
   }
   .logo {
     width: 72px;

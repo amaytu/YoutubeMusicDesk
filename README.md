@@ -58,6 +58,21 @@ que embute um Chromium inteiro por app.
 Atalhos: `Espaço` tocar/pausar · `Ctrl+←/→` anterior/próxima · `Ctrl+F` ou `/` busca ·
 `Alt+←` voltar · `Esc` fecha o "tocando agora".
 
+## Design "liquid glass"
+
+- **Material de vidro** (`.glass` em `src/app.css`): desfoque leve + refração SVG
+  (`#lg-refract`, em `App.svelte`) + saturação, borda iluminada e brilho especular que
+  segue o ponteiro (`use:sheen`).
+- **Elementos flutuantes**: abas em cápsula com indicador "líquido" que desliza e estica;
+  player em cápsula com o conteúdo rolando por baixo.
+- **Transições** (View Transitions do WebView2): a página entra com fade + desfoque, a
+  capa "voa" do card até a página do álbum/artista e da barra do player até o
+  "Tocando agora".
+- **Hover**: cards inclinam em 3D seguindo o mouse, botões com mola e reflexo,
+  ícones com bolha de vidro, play em orbe com pulso enquanto toca.
+- **Efeitos de vidro** pode ser desligado no menu da conta (PCs mais fracos);
+  `prefers-reduced-motion` do Windows desliga as animações.
+
 ## Desempenho
 
 - Dois webviews compartilham um único processo de navegador WebView2.

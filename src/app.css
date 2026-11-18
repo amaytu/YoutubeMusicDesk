@@ -1,22 +1,52 @@
+/* ==========================================================================
+   YouTube Music Desk — design system "liquid glass"
+   Vidro = desfoque + saturação + (opcional) refração SVG + borda iluminada +
+   brilho que segue o ponteiro. html.solid desliga tudo (PCs mais fracos).
+   ========================================================================== */
+
 :root {
-  --bg: #0d0d12;
-  --panel: rgba(16, 16, 22, 0.52);
-  --panel-strong: rgba(12, 12, 18, 0.78);
-  --panel-hover: rgba(255, 255, 255, 0.06);
-  --line: rgba(255, 255, 255, 0.08);
-  --text: #f3f3f6;
-  --muted: #a4a4b0;
-  --faint: #6e6e7a;
-  --accent: #2bc4d4;
-  --accent-soft: rgba(43, 196, 212, 0.16);
-  --radius: 10px;
-  --radius-lg: 14px;
-  --titlebar: 52px;
-  --playerbar: 84px;
+  --bg: #0b0b10;
+  --text: #f5f5f8;
+  --muted: rgba(235, 235, 245, 0.62);
+  --faint: rgba(235, 235, 245, 0.38);
+  --line: rgba(255, 255, 255, 0.1);
+  --accent: #34d3e2;
+  --accent-2: #8b7bff;
+  --accent-soft: rgba(52, 211, 226, 0.16);
+  --accent-glow: rgba(52, 211, 226, 0.45);
+
+  /* material de vidro */
+  --glass-tint: rgba(255, 255, 255, 0.09);
+  --glass-tint-2: rgba(255, 255, 255, 0.035);
+  --glass-hover: rgba(255, 255, 255, 0.12);
+  --glass-blur: 10px;
+  --glass-sat: 1.9;
+  /* Ordem importa: com url() primeiro o Chromium descarta o filtro inteiro.
+     blur leve -> refração SVG (#lg-refract) -> saturação. */
+  --glass-filter: blur(var(--glass-blur)) url(#lg-refract) saturate(var(--glass-sat)) brightness(1.05);
+  --glass-shadow: 0 1px 0 rgba(255, 255, 255, 0.28) inset, 0 -1px 0 rgba(255, 255, 255, 0.05) inset,
+    0 18px 40px -12px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.18);
+
+  --radius: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --titlebar: 60px;
+  --playerbar: 76px;
+  /* espaço reservado no fim das listas para o player flutuante */
+  --player-space: calc(var(--playerbar) + 32px);
+
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --spring: cubic-bezier(0.34, 1.45, 0.5, 1);
   --font: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
   --font-display: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
   color-scheme: dark;
+}
+
+html.solid {
+  --glass-tint: rgba(28, 28, 36, 0.94);
+  --glass-tint-2: rgba(22, 22, 30, 0.94);
+  --glass-hover: rgba(44, 44, 56, 0.96);
+  --glass-filter: none;
 }
 
 * {
@@ -45,23 +75,20 @@ button {
   padding: 0;
   cursor: pointer;
 }
-
-input {
+input,
+select {
   font: inherit;
   color: inherit;
 }
-
 img {
   display: block;
 }
-
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
-  border-radius: 6px;
+  border-radius: 8px;
 }
 
-/* Barras de rolagem finas, só aparecem no hover. */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -73,13 +100,70 @@ img {
   background-clip: content-box;
 }
 :hover::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.18);
+  background-color: rgba(255, 255, 255, 0.2);
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 
-/* Utilitários */
+/* ------------------------------------------------------------------ vidro */
+.glass {
+  position: relative;
+  background: linear-gradient(160deg, var(--glass-tint), var(--glass-tint-2));
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--glass-shadow);
+  isolation: isolate;
+}
+/* borda iluminada: luz vindo do alto à esquerda */
+.glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.5),
+    rgba(255, 255, 255, 0.1) 30%,
+    rgba(255, 255, 255, 0.02) 55%,
+    rgba(255, 255, 255, 0.18) 100%
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 1;
+}
+/* brilho especular que segue o ponteiro (ver use:sheen) */
+.glass::after,
+.sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    var(--sheen-size, 220px) circle at var(--mx, 50%) var(--my, -40%),
+    rgba(255, 255, 255, 0.16),
+    rgba(255, 255, 255, 0.04) 40%,
+    transparent 70%
+  );
+  opacity: var(--sheen, 0);
+  transition: opacity 0.35s var(--ease);
+  pointer-events: none;
+  z-index: 1;
+}
+.glass:hover,
+.sheen:hover {
+  --sheen: 1;
+}
+html.solid .glass::after,
+html.solid .sheen::after {
+  display: none;
+}
+
+/* ------------------------------------------------------------------ utilitários */
 .ellipsis {
   white-space: nowrap;
   overflow: hidden;
@@ -90,78 +174,158 @@ img {
 }
 .link {
   cursor: pointer;
+  transition: color 0.15s;
 }
 .link:hover {
   text-decoration: underline;
+  text-underline-offset: 3px;
   color: var(--text);
 }
 .section-title {
-  font: 600 12px var(--font);
-  letter-spacing: 0.12em;
+  font: 600 11px var(--font);
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted);
   margin: 0;
 }
-.glass {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-}
 
+/* ------------------------------------------------------------------ botões */
 .btn {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  height: 34px;
-  padding: 0 16px;
+  height: 36px;
+  padding: 0 18px;
   border-radius: 999px;
   font-weight: 600;
   font-size: 12px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid var(--line);
-  transition: background 0.15s, transform 0.15s var(--ease);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04));
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.3) inset, 0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+    0 6px 16px -6px rgba(0, 0, 0, 0.5);
+  -webkit-backdrop-filter: blur(12px) saturate(1.6);
+  backdrop-filter: blur(12px) saturate(1.6);
+  overflow: hidden;
+  transition: transform 0.35s var(--spring), box-shadow 0.25s, background 0.25s;
 }
 .btn:hover {
-  background: rgba(255, 255, 255, 0.14);
+  transform: translateY(-1px) scale(1.04);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.07));
 }
 .btn:active {
-  transform: scale(0.97);
+  transform: scale(0.95);
+  transition-duration: 0.1s;
 }
 .btn.primary {
-  background: var(--accent);
-  border-color: transparent;
-  color: #031418;
+  color: #03161a;
+  background: linear-gradient(160deg, #7ef0fa, var(--accent) 55%, #1fb3c4);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 -2px 6px rgba(0, 80, 90, 0.35) inset,
+    0 8px 22px -6px var(--accent-glow);
 }
 .btn.primary:hover {
-  background: #4fd6e3;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset, 0 -2px 6px rgba(0, 80, 90, 0.35) inset,
+    0 12px 30px -6px var(--accent-glow);
+}
+/* reflexo que atravessa o botão no hover */
+.btn::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -60%;
+  width: 40%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transform: skewX(-20deg);
+  transition: left 0s;
+  pointer-events: none;
+}
+.btn:hover::after {
+  left: 130%;
+  transition: left 0.7s var(--ease);
 }
 
 .icon-btn {
-  width: 36px;
-  height: 36px;
+  position: relative;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   display: inline-grid;
   place-items: center;
   color: var(--muted);
-  transition: color 0.15s, background 0.15s, transform 0.15s var(--ease);
+  transition: color 0.2s, transform 0.35s var(--spring);
+}
+/* bolha de vidro que "cresce" no hover */
+.icon-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.06));
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset, 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+  transform: scale(0.4);
+  opacity: 0;
+  transition: transform 0.4s var(--spring), opacity 0.2s;
 }
 .icon-btn:hover {
   color: var(--text);
-  background: var(--panel-hover);
+  transform: scale(1.06);
+}
+.icon-btn:hover::before {
+  transform: scale(1);
+  opacity: 1;
 }
 .icon-btn:active {
-  transform: scale(0.92);
+  transform: scale(0.88);
+  transition-duration: 0.1s;
+}
+.icon-btn > * {
+  position: relative;
 }
 .icon-btn.on {
   color: var(--accent);
+  filter: drop-shadow(0 0 6px var(--accent-glow));
+}
+
+/* campos (filtro, ordenação) */
+.field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  color: var(--muted);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03));
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.18) inset, 0 0 0 1px rgba(255, 255, 255, 0.07) inset;
+  transition: box-shadow 0.2s, background 0.2s;
+}
+.field:focus-within {
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset, 0 0 0 1px rgba(52, 211, 226, 0.6) inset,
+    0 0 0 4px rgba(52, 211, 226, 0.12);
+}
+.field input,
+.field select {
+  background: none;
+  border: 0;
+  outline: 0;
+  color: var(--text);
+}
+.field input {
+  width: 140px;
+}
+.field select {
+  cursor: pointer;
+}
+.field option {
+  background: #1a1a22;
 }
 
 .skeleton {
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.05) 100%);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.11) 50%, rgba(255, 255, 255, 0.05) 100%);
   background-size: 200% 100%;
-  animation: shimmer 1.2s linear infinite;
+  animation: shimmer 1.3s linear infinite;
   border-radius: var(--radius);
 }
 @keyframes shimmer {
@@ -170,10 +334,80 @@ img {
   }
 }
 
+/* ------------------------------------------------------------------ transições entre telas
+   View Transitions do Chromium: a página entra com fade + leve deslize; capas com
+   o mesmo view-transition-name "voam" entre telas. A moldura (barra/player) fica
+   no grupo raiz, que não anima. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+::view-transition-group(*) {
+  animation-duration: 0.42s;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+::view-transition-old(page) {
+  animation: vt-out 0.16s ease-in both;
+}
+::view-transition-new(page) {
+  animation: vt-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) 0.05s both;
+}
+::view-transition-old(nowplaying) {
+  animation: np-out 0.28s ease-in both;
+}
+::view-transition-new(nowplaying) {
+  animation: np-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+::view-transition-image-pair(hero-cover),
+::view-transition-image-pair(np-cover) {
+  isolation: auto;
+}
+::view-transition-old(hero-cover),
+::view-transition-new(hero-cover),
+::view-transition-old(np-cover),
+::view-transition-new(np-cover) {
+  animation-duration: 0.42s;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 12px;
+  overflow: hidden;
+}
+@keyframes vt-out {
+  to {
+    opacity: 0;
+    transform: scale(0.985);
+    filter: blur(6px);
+  }
+}
+@keyframes vt-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(1.01);
+    filter: blur(6px);
+  }
+}
+@keyframes np-in {
+  from {
+    opacity: 0;
+    transform: translateY(6%) scale(0.98);
+    filter: blur(10px);
+  }
+}
+@keyframes np-out {
+  to {
+    opacity: 0;
+    transform: translateY(4%) scale(0.985);
+    filter: blur(8px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
-  *::after {
+  *::after,
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }

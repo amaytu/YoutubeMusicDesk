@@ -34,7 +34,7 @@
   .page {
     height: 100%;
     overflow-y: auto;
-    padding: 4px 24px 24px;
+    padding: 4px 24px var(--player-space);
   }
   h1 {
     margin: 4px 4px 18px;
