@@ -6,31 +6,28 @@
   import { api } from "../lib/api";
   import { player } from "../lib/player.svelte";
   import { router } from "../lib/router.svelte";
-  import type { Lyrics, Track } from "../lib/types";
+  import type { Track } from "../lib/types";
   import { artistsText, fmtTime } from "../lib/util";
   import Background from "./Background.svelte";
   import Cover from "./Cover.svelte";
   import Icon from "./Icon.svelte";
+  import LyricsPanel from "./LyricsPanel.svelte";
   import Range from "./Range.svelte";
 
   const s = $derived(player.state);
   const tab = $derived(player.nowPlaying);
 
   let queue = $state<Track[] | null>(null);
-  let lyrics = $state<Lyrics | null | undefined>(undefined);
   let queueEl = $state<HTMLDivElement>();
 
-  // Recarrega a fila/letra quando a faixa muda (só a aba aberta).
+  // Recarrega a fila quando a faixa muda (só com a aba aberta).
   $effect(() => {
-    const vid = s.videoId;
+    s.videoId;
     if (tab === "queue") {
       api.queue().then((q) => {
         queue = q;
         requestAnimationFrame(() => queueEl?.querySelector(".q.sel")?.scrollIntoView({ block: "center", behavior: "smooth" }));
       }).catch(() => (queue = []));
-    } else if (tab === "lyrics" && vid) {
-      lyrics = undefined;
-      api.lyrics(vid).then((l) => (lyrics = l)).catch(() => (lyrics = null));
     }
   });
 
@@ -83,7 +80,7 @@
               <p class="muted pad">A fila está vazia.</p>
             {:else}
               {#each queue as t (t.index)}
-                <button class="q" class:sel={t.selected} onclick={() => player.playQueueIndex(t.index!)}>
+                <button class="q" class:sel={t.selected} onclick={() => player.playQueueItem(t)}>
                   <div class="q-art"><Cover src={t.thumb} size={80} /></div>
                   <div class="q-text">
                     <div class="ellipsis t">{t.title}</div>
@@ -95,16 +92,7 @@
             {/if}
           </div>
         {:else}
-          <div class="scroll lyrics">
-            {#if lyrics === undefined}
-              {#each Array(10) as _, i}<div class="skeleton" style="height:18px;margin:12px auto;width:{50 + ((i * 37) % 40)}%"></div>{/each}
-            {:else if lyrics === null}
-              <p class="muted pad">Letra não disponível para esta música.</p>
-            {:else}
-              <pre>{lyrics.text}</pre>
-              <small>{lyrics.source}</small>
-            {/if}
-          </div>
+          <LyricsPanel />
         {/if}
       </aside>
     {/if}
@@ -300,21 +288,6 @@
   .d {
     font-size: 12px;
     color: var(--muted);
-  }
-  .lyrics {
-    text-align: center;
-    padding: 18px 20px;
-  }
-  pre {
-    margin: 0;
-    white-space: pre-wrap;
-    font: 600 19px/1.75 var(--font-display);
-    user-select: text;
-  }
-  small {
-    display: block;
-    margin-top: 18px;
-    color: var(--faint);
   }
   .controls {
     padding: 8px 32px 22px;

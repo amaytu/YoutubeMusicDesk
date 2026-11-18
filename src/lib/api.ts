@@ -82,6 +82,18 @@ export async function syncedLyrics(title: string, artist: string, album: string,
   return invoke<string | null>("synced_lyrics", { title, artist, album: album || null, duration: duration || null });
 }
 
+export interface Translation {
+  lines: string[];
+  source: string;
+  provider: string;
+}
+
+/** Traduz linhas da letra (Google Tradutor por padrão; DeepL se houver chave). */
+export async function translateLines(lines: string[], target = "pt"): Promise<Translation> {
+  if (!IS_TAURI) return (await mock()).translate(lines);
+  return invoke<Translation>("translate_lines", { lines, target });
+}
+
 /** Ilha: informa a área clicável da pílula (px relativos à janela). */
 export async function islandHitbox(r: { x: number; y: number; w: number; h: number }) {
   if (IS_TAURI) return invoke("island_hitbox", r);

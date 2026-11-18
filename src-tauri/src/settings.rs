@@ -23,6 +23,8 @@ pub struct Settings {
     pub login_user_agent: Option<String>,
     /// Ilha dinâmica no topo da tela quando o app está em segundo plano.
     pub island_enabled: bool,
+    /// Chave da API do DeepL (opcional). Sem ela a tradução usa o Google Tradutor.
+    pub deepl_api_key: Option<String>,
 }
 
 impl Default for Settings {
@@ -36,6 +38,7 @@ impl Default for Settings {
             login_ua_switch: true,
             login_user_agent: None,
             island_enabled: true,
+            deepl_api_key: None,
         }
     }
 }

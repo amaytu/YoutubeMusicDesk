@@ -137,8 +137,9 @@ class Player {
   playPlaylistId(playlistId: string, shuffle = false) {
     playerCmd("playItem", { playlistId, shuffle });
   }
-  playQueueIndex(i: number) {
-    playerCmd("playQueueIndex", i);
+  playQueueItem(t: Track) {
+    this.state = { ...this.state, title: t.title, thumb: t.thumb ?? this.state.thumb, playing: true };
+    playerCmd("playQueueItem", { videoId: t.videoId, index: t.index ?? -1 });
   }
 
   login() {

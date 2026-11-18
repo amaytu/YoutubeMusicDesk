@@ -2,13 +2,16 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "island",
   "description": "Ilha dinâmica: eventos do player, comandos de reprodução, letras e voltar ao app.",
-  "windows": ["island"],
+  "windows": [
+    "island"
+  ],
   "permissions": [
     "core:event:default",
     "allow-ytm",
     "allow-player-cmd",
     "allow-island-hitbox",
     "allow-show-main",
-    "allow-synced-lyrics"
+    "allow-synced-lyrics",
+    "allow-translate-lines"
   ]
 }

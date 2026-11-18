@@ -10,7 +10,8 @@
   import Cover from "./components/Cover.svelte";
   import Icon from "./components/Icon.svelte";
   import { IS_TAURI, islandHitbox, showMain } from "./lib/api";
-  import { lineAt, loadLyrics, type LyricSet } from "./lib/lyrics";
+  import type { Translation } from "./lib/api";
+  import { lineAt, loadLyrics, lyricsPrefs, sameLanguage, translateSet, type LyricSet } from "./lib/lyrics.svelte";
   import { player } from "./lib/player.svelte";
 
   type Mode = "compact" | "open" | "tucked";
@@ -31,8 +32,13 @@
   const idx = $derived(lyrics ? lineAt(lyrics.lines, player.time) : -1);
   const line = $derived(lyrics && idx >= 0 ? lyrics.lines[idx].text : "");
   const nextLine = $derived(lyrics && idx + 1 < lyrics.lines.length ? lyrics.lines[idx + 1].text : "");
-  /** Texto da pílula compacta: letra atual, ou título — artista. */
-  const ticker = $derived(line || [s.title, s.artist].filter(Boolean).join(" — "));
+  /** Tradução da linha atual (se "Traduzir" estiver ligado e a letra não for PT). */
+  let tr = $state<Translation | null>(null);
+  const trLine = $derived(
+    lyricsPrefs.translate && tr && !sameLanguage(tr) && idx >= 0 && tr.lines[idx] !== line && line !== "♪" ? tr.lines[idx] : "",
+  );
+  /** Texto da pílula compacta: tradução, letra atual, ou título — artista. */
+  const ticker = $derived(trLine || line || [s.title, s.artist].filter(Boolean).join(" — "));
   const progress = $derived(s.duration ? Math.min(100, (player.time / s.duration) * 100) : 0);
 
   // Busca a letra quando a faixa muda (ou quando a duração fica conhecida).
@@ -43,6 +49,15 @@
     lyrics = null;
     loadLyrics(st).then((l) => {
       if (l && player.state.videoId === st.videoId) lyrics = l;
+    });
+  });
+
+  $effect(() => {
+    tr = null;
+    if (!lyricsPrefs.translate || !lyrics) return;
+    const current = lyrics;
+    translateSet(player.state.videoId, current).then((t) => {
+      if (lyrics === current) tr = t;
     });
   });
 
@@ -151,7 +166,7 @@
               {line || (lyrics ? "♪" : "Letra indisponível")}
             </span>
           {/key}
-          {#if nextLine}<span class="next">{nextLine}</span>{/if}
+          {#if trLine}<span class="next tr">{trLine}</span>{:else if nextLine}<span class="next">{nextLine}</span>{/if}
         </div>
         <div class="controls">
           <button class="ctl" onclick={(e) => (e.stopPropagation(), player.prev())} title="Anterior"><Icon name="prev" size={18} /></button>
@@ -365,6 +380,11 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+  .lyric .next.tr {
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 600;
   }
   .controls {
     display: flex;

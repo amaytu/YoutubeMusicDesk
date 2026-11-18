@@ -14,9 +14,17 @@
   function openNow(tab: "art" | "queue" | "lyrics") {
     player.openNow(player.nowPlaying === tab ? null : tab);
   }
+
+  /** Clique em qualquer área livre da barra abre (ou fecha) o "Tocando agora". */
+  function onDockClick(e: MouseEvent) {
+    if (!player.hasTrack) return;
+    if ((e.target as HTMLElement).closest("button, input, a, .vol-range")) return;
+    openNow("art");
+  }
 </script>
 
-<footer class="dock glass" use:sheen>
+<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
+<footer class="dock glass" class:clickable={player.hasTrack} use:sheen onclick={onDockClick} title={player.hasTrack ? "Abrir Tocando agora" : ""}>
   <div class="info">
     <button
       class="art"
@@ -111,6 +119,14 @@
     border-radius: var(--radius-xl);
     --sheen-size: 320px;
   }
+  .dock.clickable {
+    cursor: pointer;
+  }
+  .dock.clickable :global(button),
+  .dock.clickable :global(input) {
+    cursor: pointer;
+  }
+
   .dock > * {
     position: relative;
     z-index: 2;

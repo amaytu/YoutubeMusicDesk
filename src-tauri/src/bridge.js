@@ -394,9 +394,7 @@
     },
 
     async queue() {
-      const items = [...document.querySelectorAll("ytmusic-player-queue-item")];
-      return items.map((el, index) => {
-        const d = el.data?.playlistPanelVideoRenderer ?? el.data ?? {};
+      return queueItems().map(({ d, el }, index) => {
         const info = parseRuns(d.longBylineText?.runs ?? d.shortBylineText?.runs ?? []);
         return {
           kind: "song",
@@ -418,15 +416,44 @@
     },
   };
 
+  // ---------------------------------------------------------------- fila
+  /** Dados de um item da fila (o YT Music às vezes embrulha música + vídeo). */
+  const itemData = (el) =>
+    el.data?.playlistPanelVideoRenderer ??
+    el.data?.primaryRenderer?.playlistPanelVideoRenderer ??
+    el.data ??
+    {};
+
+  /**
+   * Itens da fila na ordem exibida. A versão alternativa (vídeo/música) de cada
+   * faixa fica escondida no DOM; ignorá-la mantém os índices alinhados.
+   */
+  function queueItems() {
+    const root = q("ytmusic-player-queue") ?? document;
+    const seen = new Set();
+    const out = [];
+    for (const el of root.querySelectorAll("ytmusic-player-queue-item")) {
+      if (el.closest("#counterpart-renderer, [hidden]") || el.hasAttribute("hidden")) continue;
+      const d = itemData(el);
+      const key = (d.videoId ?? "") + ":" + out.length;
+      if (!d.videoId || seen.has(key)) continue;
+      seen.add(key);
+      out.push({ el, d });
+    }
+    return out;
+  }
+
   // ---------------------------------------------------------------- reprodução
   const player = () => document.getElementById("movie_player");
   const app = () => q("ytmusic-app");
   const SHUFFLE_PARAMS = "wAEB8gECKAE%3D";
 
-  async function play({ videoId, playlistId, shuffle }) {
-    const endpoint = videoId
-      ? { watchEndpoint: { videoId, playlistId } }
-      : { watchPlaylistEndpoint: { playlistId, params: shuffle ? SHUFFLE_PARAMS : undefined } };
+  async function play({ videoId, playlistId, shuffle, endpoint: given, fallback }) {
+    const endpoint =
+      given ??
+      (videoId
+        ? { watchEndpoint: { videoId, playlistId } }
+        : { watchPlaylistEndpoint: { playlistId, params: shuffle ? SHUFFLE_PARAMS : undefined } });
     const before = player()?.getVideoData?.()?.video_id;
     if (videoId && videoId === before) {
       player()?.seekTo?.(0, true);
@@ -449,7 +476,12 @@
       new CustomEvent("yt-navigate", { bubbles: true, composed: true, detail: { endpoint } }),
     );
     if (await started(4000)) return;
-    // 3) navegação comum (recarrega a página)
+    // 3) clique no próprio elemento (ex.: item da fila), se houver
+    if (fallback) {
+      fallback();
+      if (await started(2500)) return;
+    }
+    // 4) navegação comum (recarrega a página)
     const url = new URL("/watch", location.origin);
     if (videoId) url.searchParams.set("v", videoId);
     if (playlistId) url.searchParams.set("list", playlistId);
@@ -489,9 +521,21 @@
       click("ytmusic-player-bar ytmusic-like-button-renderer #button-shape-like button", "ytmusic-player-bar ytmusic-like-button-renderer .like");
       setTimeout(emitState, 300);
     },
-    playQueueIndex(i) {
-      const el = document.querySelectorAll("ytmusic-player-queue-item")[Number(i)];
-      if (el) (q(".song-info", el) ?? q(".song-title", el) ?? el).click();
+    /** Toca um item da fila sem desmontar a fila (usa o endpoint do próprio item). */
+    playQueueItem({ videoId, index }) {
+      const items = queueItems();
+      const hit =
+        (items[index]?.d.videoId === videoId && items[index]) || items.find((x) => x.d.videoId === videoId);
+      if (!hit) return play({ videoId });
+      const { el, d } = hit;
+      const ep = d.navigationEndpoint?.watchEndpoint
+        ? { watchEndpoint: d.navigationEndpoint.watchEndpoint }
+        : { watchEndpoint: { videoId: d.videoId } };
+      const clickIt = () => {
+        const target = q("ytmusic-play-button-renderer", el) ?? q(".song-info", el) ?? el;
+        target.click();
+      };
+      play({ videoId: d.videoId, endpoint: ep, fallback: clickIt });
     },
   };
 

@@ -180,7 +180,7 @@ export function cmd(name: string, arg: any) {
     case "volume": state.volume = Number(arg); state.muted = state.volume === 0; break;
     case "like": state.liked = !state.liked; break;
     case "repeat": state.repeat = state.repeat === "NONE" ? "ALL" : state.repeat === "ALL" ? "ONE" : "NONE"; break;
-    case "playQueueIndex": qi = Number(arg); load(queue[qi]); return;
+    case "playQueueItem": qi = Math.max(0, queue.findIndex((t) => t.videoId === arg.videoId)); load(queue[qi]); return;
     case "playItem": {
       const list = albums.find((a) => a.tracks[0].playlistId === arg.playlistId)?.tracks
         ?? playlists.find((p) => p.id.slice(2) === arg.playlistId)?.tracks;
@@ -210,11 +210,26 @@ export function logout() {
 
 /** LRC de demonstração: uma linha a cada 4 s. */
 export async function lrc(_title: string): Promise<string | null> {
-  const lines = ["Acendo as luzes da cidade", "E o céu se apaga devagar", "Todo eco da saudade", "Volta pra me encontrar", "", "Corre, corre, horizonte", "Leva o que eu não sei dizer", "Se a noite for ponte", "Atravesso até você"];
+  const lines = ["I turn on the city lights", "And the sky slowly fades", "Every echo of longing", "Comes back to find me", "", "Run, run, horizon", "Take what I can't say", "If the night is a bridge", "I'll cross over to you"];
   const out: string[] = [];
   for (let i = 0; i < 40; i++) {
     const t = 2 + i * 4;
     out.push(`[${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}.00]${lines[i % lines.length]}`);
   }
   return wait(out.join("\n"), 120);
+}
+
+/** Tradução de demonstração. */
+export async function translate(lines: string[]) {
+  const dict: Record<string, string> = {
+    "I turn on the city lights": "Acendo as luzes da cidade",
+    "And the sky slowly fades": "E o céu se apaga devagar",
+    "Every echo of longing": "Todo eco da saudade",
+    "Comes back to find me": "Volta pra me encontrar",
+    "Run, run, horizon": "Corre, corre, horizonte",
+    "Take what I can't say": "Leva o que eu não sei dizer",
+    "If the night is a bridge": "Se a noite for ponte",
+    "I'll cross over to you": "Atravesso até você",
+  };
+  return wait({ lines: lines.map((l) => dict[l] ?? l), source: "en", provider: "demo" }, 300);
 }

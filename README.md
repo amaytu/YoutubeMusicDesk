@@ -83,6 +83,19 @@ Atalhos: `Espaço` tocar/pausar · `Ctrl+←/→` anterior/próxima · `Ctrl+F` 
 - Modo economia em segundo plano (memória baixa do WebView2 + EcoQoS), bandeja,
   teclas de mídia globais, instância única e iniciar com o Windows.
 
+## Letra sincronizada e tradução
+
+- Em **Tocando agora → Letra**, a linha atual fica em destaque e a rolagem acompanha a
+  música. Rolou com o mouse? O acompanhamento pausa e volta sozinho (ou em
+  "Seguir a música"). Clique numa linha para pular até ela.
+- **Traduzir**: mostra a tradução em português embaixo de cada linha — também na ilha
+  dinâmica. A preferência vale para o app e a ilha.
+- A tradução usa o Google Tradutor (endpoint público, não oficial, sem chave). Para usar
+  a API oficial do **DeepL** (plano Free: 500 mil caracteres/mês), coloque sua chave em
+  `deepl_api_key` no `settings.json`.
+
+<img src="docs/lyrics.png" width="720">
+
 ## Ilha dinâmica
 
 Quando o app vai para a bandeja ou é minimizado, uma pílula aparece no topo da tela:
@@ -139,7 +152,8 @@ As opções do menu da bandeja são salvas em
   "extra_browser_args": null,
   "login_ua_switch": true,
   "login_user_agent": null,
-  "island_enabled": true
+  "island_enabled": true,
+  "deepl_api_key": null
 }
 ```
 
@@ -184,6 +198,7 @@ src-tauri/
   src/login.rs             login do Google (UA só no login)
   src/island.rs            ilha dinâmica (janela transparente, área clicável, tela cheia)
   src/lyrics.rs            letras sincronizadas via LRCLIB
+  src/translate.rs         tradução das letras (Google / DeepL)
   src/tray.rs, media.rs, power.rs, settings.rs
   capabilities/            ACL: o que cada janela pode chamar
 ```

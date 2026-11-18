@@ -11,6 +11,7 @@ fn main() {
             "island_hitbox",
             "show_main",
             "synced_lyrics",
+            "translate_lines",
         ]),
     ))
     .expect("falha no tauri-build");

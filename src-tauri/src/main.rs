@@ -8,6 +8,7 @@ mod lyrics;
 mod media;
 mod power;
 mod settings;
+mod translate;
 mod tray;
 mod window;
 
@@ -46,6 +47,7 @@ fn main() {
         .manage(bridge::Bridge::default())
         .manage(island::Island::default())
         .manage(lyrics::LyricsCache::default())
+        .manage(translate::TranslateCache::default())
         .invoke_handler(tauri::generate_handler![
             bridge::ytm,
             bridge::player_cmd,
@@ -56,6 +58,7 @@ fn main() {
             island::island_hitbox,
             island::show_main,
             lyrics::synced_lyrics,
+            translate::translate_lines,
         ])
         .setup(|app| {
             let handle = app.handle();

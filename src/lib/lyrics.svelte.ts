@@ -1,6 +1,6 @@
 // Letras com tempo: LRCLIB (sincronizada) ou, se não houver, a letra do YouTube
 // Music distribuída ao longo da música (aproximada).
-import { api, syncedLyrics } from "./api";
+import { api, syncedLyrics, translateLines, type Translation } from "./api";
 import type { PlayerState } from "./types";
 
 export interface Line {
@@ -75,3 +75,46 @@ export function lineAt(lines: Line[], time: number): number {
   }
   return ans;
 }
+
+// ------------------------------------------------------------------ tradução
+
+const trCache = new Map<string, Promise<Translation | null>>();
+
+/** Tradução alinhada às linhas da letra (cache por faixa). */
+export function translateSet(videoId: string, set: LyricSet, target = "pt"): Promise<Translation | null> {
+  const key = `${videoId}:${set.synced ? "s" : "a"}:${target}`;
+  let p = trCache.get(key);
+  if (!p) {
+    p = translateLines(
+      set.lines.map((l) => l.text),
+      target,
+    ).catch(() => {
+      trCache.delete(key); // permite tentar de novo
+      return null;
+    });
+    trCache.set(key, p);
+    if (trCache.size > 50) trCache.delete(trCache.keys().next().value!);
+  }
+  return p;
+}
+
+/** A letra já está no idioma de destino? (ex.: "pt", "pt-BR") */
+export const sameLanguage = (t: Translation | null | undefined, target = "pt") =>
+  !!t?.source && t.source.toLowerCase().split(/[-_]/)[0] === target;
+
+// Preferência "traduzir": salva no localStorage e sincronizada entre a janela
+// principal e a ilha (mesma origem -> evento "storage").
+const KEY = "ymd.lyrics.translate";
+class LyricsPrefs {
+  translate = $state(localStorage.getItem(KEY) === "1");
+  constructor() {
+    window.addEventListener("storage", (e) => {
+      if (e.key === KEY) this.translate = e.newValue === "1";
+    });
+  }
+  toggleTranslate() {
+    this.translate = !this.translate;
+    localStorage.setItem(KEY, this.translate ? "1" : "0");
+  }
+}
+export const lyricsPrefs = new LyricsPrefs();

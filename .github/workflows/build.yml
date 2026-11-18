@@ -89,16 +89,12 @@ jobs:
             ## Download
             - **Instalador recomendado:** `YouTube.Music.Desk_${{ steps.ver.outputs.version }}_x64-setup.exe`
               (instala só para o seu usuário, sem pedir administrador)
-            - Alternativa: `YouTube.Music.Desk_${{ steps.ver.outputs.version }}_x64_pt-BR.msi` / `_en-US.msi`
+            - Alternativa: `YouTube.Music.Desk_${{ steps.ver.outputs.version }}_x64_en-US.msi`
 
             O instalador ainda não é assinado: na primeira execução o Windows SmartScreen pode avisar.
             Clique em **Mais informações → Executar assim mesmo**.
 
-            ## Novidades
-            - Interface própria com design liquid glass e transições
-            - Ilha dinâmica em segundo plano com letra sincronizada
-            - Login com o Google em poucos cliques
-            - Modo economia, bandeja, teclas de mídia, iniciar com o Windows
+            As mudanças desta versão estão listadas abaixo (gerado a partir dos commits).
           files: |
             src-tauri/target/release/bundle/nsis/*.exe
             src-tauri/target/release/bundle/msi/*.msi
