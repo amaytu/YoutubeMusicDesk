@@ -5,7 +5,6 @@
   import { player } from "../lib/player.svelte";
   import { router, type Tab } from "../lib/router.svelte";
   import Icon from "./Icon.svelte";
-  import Logo from "./Logo.svelte";
 
   const TABS: { id: Tab; label: string; icon: string }[] = [
     { id: "home", label: "Início", icon: "home" },
@@ -73,7 +72,6 @@
     <button class="icon-btn back" disabled={!router.canGoBack} onclick={() => router.back()} title="Voltar (Alt+←)">
       <Icon name="back" size={18} />
     </button>
-    <span class="logo" data-tauri-drag-region><Logo size={26} /></span>
     <span class="brand" data-tauri-drag-region>YouTube Music Desk</span>
   </div>
 
@@ -164,11 +162,6 @@
   }
   .back:disabled {
     opacity: 0.25;
-    pointer-events: none;
-  }
-  .logo {
-    display: grid;
-    margin-left: 2px;
     pointer-events: none;
   }
   .brand {
