@@ -64,7 +64,7 @@
   }
   .logo {
     margin-bottom: 4px;
-    filter: drop-shadow(0 14px 30px rgba(124, 92, 255, 0.45));
+    filter: drop-shadow(0 14px 30px rgba(255, 0, 0, 0.4));
     animation: float 3.2s ease-in-out infinite;
   }
   @keyframes float {
