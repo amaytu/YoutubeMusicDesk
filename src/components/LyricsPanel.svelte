@@ -17,9 +17,7 @@
   let following = $state(true);
   let resumeTimer: ReturnType<typeof setTimeout>;
 
-  const offset = $derived(lyricsPrefs.offset(player.state.videoId));
-  const idx = $derived(set ? lineAt(set.lines, player.time, offset) : -1);
-  const fmtOffset = (o: number) => (o > 0 ? "+" : "") + o.toFixed(1).replace(".", ",") + " s";
+  const idx = $derived(set ? lineAt(set.lines, player.time) : -1);
   const showTr = $derived(lyricsPrefs.translate && !!tr && !sameLanguage(tr));
 
   // Carrega a letra só quando a faixa (ou a duração dela) muda — não a cada
@@ -69,7 +67,7 @@
   }
   function seekTo(i: number) {
     if (!set) return;
-    player.seek(Math.max(0, set.lines[i].t - offset - 0.1));
+    player.seek(Math.max(0, set.lines[i].t - 0.1));
     follow();
   }
 </script>
@@ -82,7 +80,7 @@
         class="badge"
         class:synced={set.synced}
         title={set.synced
-          ? `Sincronizada (${set.source === "youtube" ? "YouTube Music" : "LRCLIB"}). Fora do tempo? Use os botões de ajuste.`
+          ? `Sincronizada (${set.source === "youtube" ? "YouTube Music" : "LRCLIB"})`
           : "Não há versão sincronizada desta letra: as linhas são distribuídas ao longo da música, então o tempo é só aproximado."}
       >
         {set.synced ? "Sincronizada" : "Aproximada"}
@@ -95,19 +93,6 @@
       <span class="switch"><i></i></span>
     </button>
   </div>
-
-  {#if set?.synced}
-    <div class="sync">
-      <span class="sync-label">Sincronia</span>
-      <button class="nudge" onclick={() => lyricsPrefs.nudge(s.videoId, -0.5)} title="Letra adiantada? Atrasar 0,5 s">−0,5 s</button>
-      <button class="off" onclick={() => lyricsPrefs.nudge(s.videoId, null)} title="Voltar ao original" disabled={offset === 0}>
-        {offset === 0 ? "0 s" : fmtOffset(offset)}
-      </button>
-      <button class="nudge" onclick={() => lyricsPrefs.nudge(s.videoId, 0.5)} title="Letra atrasada? Adiantar 0,5 s">+0,5 s</button>
-    </div>
-  {:else if set && !set.synced}
-    <div class="note">Sem letra sincronizada para esta música: o tempo é aproximado.</div>
-  {/if}
 
   {#if lyricsPrefs.translate && set && tr === undefined}
     <div class="note">Traduzindo…</div>
@@ -222,44 +207,6 @@
   }
   .on .switch i {
     transform: translateX(13px);
-  }
-  .sync {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 0 16px 6px;
-    font-size: 12px;
-  }
-  .sync-label {
-    color: var(--muted);
-    margin-right: 2px;
-  }
-  .nudge,
-  .off {
-    height: 26px;
-    padding: 0 10px;
-    border-radius: 999px;
-    font-size: 11px;
-    font-weight: 700;
-    background: rgba(255, 255, 255, 0.08);
-    transition: background 0.2s, transform 0.3s var(--spring);
-  }
-  .nudge:hover,
-  .off:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.16);
-  }
-  .nudge:active {
-    transform: scale(0.92);
-  }
-  .off {
-    min-width: 54px;
-    color: var(--accent);
-    background: var(--accent-soft);
-  }
-  .off:disabled {
-    color: var(--muted);
-    background: rgba(255, 255, 255, 0.05);
-    cursor: default;
   }
   .note {
     margin: 0 16px 4px;

@@ -70,10 +70,8 @@ export function loadLyrics(s: PlayerState): Promise<LyricSet | null> {
   return p;
 }
 
-/** Índice da linha atual (busca binária). -1 = antes da primeira.
- *  `offset` (s) > 0 adianta a letra; < 0 atrasa. */
-export function lineAt(lines: Line[], time: number, offset = 0): number {
-  time += offset;
+/** Índice da linha atual (busca binária). -1 = antes da primeira. */
+export function lineAt(lines: Line[], time: number): number {
   let lo = 0,
     hi = lines.length - 1,
     ans = -1;
@@ -114,39 +112,15 @@ export function translateSet(videoId: string, set: LyricSet, target = "pt"): Pro
 export const sameLanguage = (t: Translation | null | undefined, target = "pt") =>
   !!t?.source && t.source.toLowerCase().split(/[-_]/)[0] === target;
 
-// Preferências: "traduzir" e ajuste de sincronia por música. Salvas no
-// localStorage e sincronizadas entre a janela principal e a ilha (evento "storage").
+// Preferência "traduzir": salva no localStorage e sincronizada entre a janela
+// principal e a ilha (mesma origem -> evento "storage").
 const KEY = "ymd.lyrics.translate";
-const OFFSETS_KEY = "ymd.lyrics.offsets";
-const readOffsets = (): Record<string, number> => {
-  try {
-    return JSON.parse(localStorage.getItem(OFFSETS_KEY) ?? "{}");
-  } catch {
-    return {};
-  }
-};
 class LyricsPrefs {
   translate = $state(localStorage.getItem(KEY) === "1");
-  offsets = $state<Record<string, number>>(readOffsets());
   constructor() {
     window.addEventListener("storage", (e) => {
       if (e.key === KEY) this.translate = e.newValue === "1";
-      if (e.key === OFFSETS_KEY) this.offsets = readOffsets();
     });
-  }
-  offset(videoId: string) {
-    return this.offsets[videoId] ?? 0;
-  }
-  /** Ajusta a sincronia desta música (passos de 0,5 s; 0 remove). */
-  nudge(videoId: string, delta: number | null) {
-    const next = { ...this.offsets };
-    const v = delta === null ? 0 : Math.round(((next[videoId] ?? 0) + delta) * 10) / 10;
-    if (v === 0) delete next[videoId];
-    else next[videoId] = Math.max(-30, Math.min(30, v));
-    const keys = Object.keys(next);
-    if (keys.length > 300) delete next[keys[0]];
-    this.offsets = next;
-    localStorage.setItem(OFFSETS_KEY, JSON.stringify(next));
   }
   toggleTranslate() {
     this.translate = !this.translate;
@@ -154,3 +128,8 @@ class LyricsPrefs {
   }
 }
 export const lyricsPrefs = new LyricsPrefs();
+
+// Remove ajustes de sincronia salvos por versões anteriores.
+try {
+  localStorage.removeItem("ymd.lyrics.offsets");
+} catch {}

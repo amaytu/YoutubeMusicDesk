@@ -97,7 +97,6 @@ Atalhos: `Espaço` tocar/pausar · `Ctrl+←/→` anterior/próxima · `Ctrl+F` 
 - Fontes, em ordem: letra **com tempo do próprio YouTube Music** (a mesma faixa que
   está tocando), **LRCLIB** (só versões com a mesma duração, ±2 s) e, sem nenhuma das
   duas, a letra distribuída ao longo da música (marcada como **Aproximada**).
-- Fora do tempo? Ajuste a **Sincronia** (±0,5 s) no painel da letra; fica salvo por música.
 - Em **Tocando agora → Letra**, a linha atual fica em destaque e a rolagem acompanha a
   música. Rolou com o mouse? O acompanhamento pausa e volta sozinho (ou em
   "Seguir a música"). Clique numa linha para pular até ela.
