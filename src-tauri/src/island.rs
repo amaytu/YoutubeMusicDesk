@@ -4,7 +4,7 @@
 //! A janela é transparente e sempre no topo. Para não bloquear cliques no resto da
 //! tela, ela ignora o mouse fora da pílula: a página informa o retângulo visível
 //! (`island_hitbox`) e uma thread leve (12x/s, só enquanto a ilha está visível)
-//! liga/desliga `set_ignore_cursor_events` conforme o cursor entra ou sai.
+//! liga/desliga o "atravessar cliques" (WS_EX_TRANSPARENT) conforme o cursor entra ou sai.
 //! Em jogos/apresentações em tela cheia a ilha se esconde sozinha.
 
 use std::{
@@ -66,7 +66,7 @@ pub fn create<R: Runtime>(app: &AppHandle<R>, browser_args: &str) -> tauri::Resu
     #[cfg(not(windows))]
     let _ = browser_args;
     let w = builder.build()?;
-    let _ = w.set_ignore_cursor_events(true);
+    platform::set_click_through(&w, true);
     Ok(())
 }
 
@@ -116,7 +116,7 @@ fn show<R: Runtime>(app: &AppHandle<R>) {
         return;
     }
     position(&w);
-    let _ = w.set_ignore_cursor_events(true);
+    platform::set_click_through(&w, true);
     platform::show_no_activate(&w);
     start_polling(app);
 }
@@ -124,7 +124,7 @@ fn show<R: Runtime>(app: &AppHandle<R>) {
 fn hide<R: Runtime>(app: &AppHandle<R>) {
     let Some(w) = window(app) else { return };
     if app.state::<Island>().shown.swap(false, Ordering::SeqCst) {
-        let _ = w.hide();
+        platform::hide(&w);
     }
 }
 
@@ -183,11 +183,11 @@ fn start_polling<R: Runtime>(app: &AppHandle<R>) {
             let inside = lx >= hx && lx <= hx + hw && ly >= hy && ly <= hy + hh;
             if inside == ignoring {
                 ignoring = !inside;
-                let _ = w.set_ignore_cursor_events(ignoring);
+                platform::set_click_through(&w, ignoring);
             }
         }
         if let Some(w) = window(&app) {
-            let _ = w.set_ignore_cursor_events(true);
+            platform::set_click_through(&w, true);
         }
         app.state::<Island>().polling.store(false, Ordering::SeqCst);
     });
@@ -220,6 +220,10 @@ pub fn show_main<R: Runtime>(app: AppHandle<R>, webview: Webview<R>) -> Result<(
     Ok(())
 }
 
+// No Windows a ilha é controlada direto pela API Win32, sem os métodos de
+// visibilidade/cursor do Tauri: eles reaplicam o estado interno da janela e,
+// como a mostramos com SW_SHOWNOACTIVATE (para não roubar o foco), o Tauri a
+// considerava oculta e a escondia (SW_HIDE) assim que o mouse entrava.
 #[cfg(windows)]
 mod platform {
     use tauri::{Runtime, WebviewWindow};
@@ -228,16 +232,43 @@ mod platform {
         SHQueryUserNotificationState, QUNS_BUSY, QUNS_PRESENTATION_MODE,
         QUNS_RUNNING_D3D_FULL_SCREEN,
     };
-    use windows::Win32::UI::WindowsAndMessaging::{ShowWindow, SW_SHOWNOACTIVATE};
+    use windows::Win32::UI::WindowsAndMessaging::{
+        GetWindowLongPtrW, SetWindowLongPtrW, ShowWindow, GWL_EXSTYLE, SW_HIDE, SW_SHOWNOACTIVATE,
+        WS_EX_LAYERED, WS_EX_TRANSPARENT,
+    };
+
+    fn hwnd<R: Runtime>(w: &WebviewWindow<R>) -> Option<HWND> {
+        w.hwnd().ok().map(|h| HWND(h.0))
+    }
 
     /// Mostra sem tirar o foco do app que o usuário está usando.
     pub fn show_no_activate<R: Runtime>(w: &WebviewWindow<R>) {
-        match w.hwnd() {
-            Ok(h) => unsafe {
-                let _ = ShowWindow(HWND(h.0), SW_SHOWNOACTIVATE);
-            },
-            Err(_) => {
-                let _ = w.show();
+        if let Some(h) = hwnd(w) {
+            unsafe {
+                let _ = ShowWindow(h, SW_SHOWNOACTIVATE);
+            }
+        }
+    }
+
+    pub fn hide<R: Runtime>(w: &WebviewWindow<R>) {
+        if let Some(h) = hwnd(w) {
+            unsafe {
+                let _ = ShowWindow(h, SW_HIDE);
+            }
+        }
+    }
+
+    /// true = cliques atravessam a janela (fora da pílula).
+    pub fn set_click_through<R: Runtime>(w: &WebviewWindow<R>, through: bool) {
+        let Some(h) = hwnd(w) else { return };
+        unsafe {
+            let ex = GetWindowLongPtrW(h, GWL_EXSTYLE);
+            let flag = WS_EX_TRANSPARENT.0 as isize;
+            // WS_EX_TRANSPARENT só atravessa cliques junto com WS_EX_LAYERED.
+            let mut next = ex | WS_EX_LAYERED.0 as isize;
+            next = if through { next | flag } else { next & !flag };
+            if next != ex {
+                SetWindowLongPtrW(h, GWL_EXSTYLE, next);
             }
         }
     }
@@ -256,6 +287,12 @@ mod platform {
     use tauri::{Runtime, WebviewWindow};
     pub fn show_no_activate<R: Runtime>(w: &WebviewWindow<R>) {
         let _ = w.show();
+    }
+    pub fn hide<R: Runtime>(w: &WebviewWindow<R>) {
+        let _ = w.hide();
+    }
+    pub fn set_click_through<R: Runtime>(w: &WebviewWindow<R>, through: bool) {
+        let _ = w.set_ignore_cursor_events(through);
     }
     pub fn fullscreen_app_running() -> bool {
         false
