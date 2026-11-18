@@ -12,7 +12,7 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::{AppHandle, Manager, Runtime, Url};
 
-use crate::{settings, MAIN_WINDOW};
+use crate::{settings, PLAYER_WINDOW};
 
 /// Mesmo destino do botão "Fazer login" do YouTube Music.
 pub const LOGIN_URL: &str = "https://accounts.google.com/ServiceLogin?service=youtube&passive=true&continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26app%3Ddesktop%26next%3Dhttps%253A%252F%252Fmusic.youtube.com%252F";
@@ -42,7 +42,7 @@ pub fn on_navigation<R: Runtime>(app: &AppHandle<R>, url: &Url) -> bool {
     if LOGIN_UA_ACTIVE.swap(want, Ordering::SeqCst) == want {
         return true;
     }
-    let Some(window) = app.get_webview_window(MAIN_WINDOW) else {
+    let Some(window) = app.get_webview_window(PLAYER_WINDOW) else {
         return true;
     };
     let ua = want.then(|| {
@@ -59,17 +59,17 @@ pub fn on_navigation<R: Runtime>(app: &AppHandle<R>, url: &Url) -> bool {
     false
 }
 
-/// Abre direto a tela de login do Google (ou o seletor de contas, se já houver uma).
+/// Abre uma janela pequena direto na tela de login do Google (ou no seletor de
+/// contas). Ao concluir, o bridge detecta a sessão e fecha a janela sozinho.
 pub fn start<R: Runtime>(app: &AppHandle<R>) {
-    if let Some(w) = app.get_webview_window(MAIN_WINDOW) {
-        crate::window::show(app);
+    if let Some(w) = crate::window::show_player_for_login(app) {
         let _ = w.navigate(LOGIN_URL.parse().unwrap());
     }
 }
 
-/// Sai da conta apagando cookies e dados do WebView2, e volta ao player.
+/// Sai da conta apagando cookies e dados do WebView2, e recarrega o player.
 pub fn sign_out<R: Runtime>(app: &AppHandle<R>) {
-    if let Some(w) = app.get_webview_window(MAIN_WINDOW) {
+    if let Some(w) = app.get_webview_window(PLAYER_WINDOW) {
         let _ = w.clear_all_browsing_data();
         let _ = w.navigate(crate::window::HOME.parse().unwrap());
     }

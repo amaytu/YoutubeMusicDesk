@@ -1,0 +1,180 @@
+:root {
+  --bg: #0d0d12;
+  --panel: rgba(16, 16, 22, 0.52);
+  --panel-strong: rgba(12, 12, 18, 0.78);
+  --panel-hover: rgba(255, 255, 255, 0.06);
+  --line: rgba(255, 255, 255, 0.08);
+  --text: #f3f3f6;
+  --muted: #a4a4b0;
+  --faint: #6e6e7a;
+  --accent: #2bc4d4;
+  --accent-soft: rgba(43, 196, 212, 0.16);
+  --radius: 10px;
+  --radius-lg: 14px;
+  --titlebar: 52px;
+  --playerbar: 84px;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --font: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-display: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.4 var(--font);
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+input {
+  font: inherit;
+  color: inherit;
+}
+
+img {
+  display: block;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Barras de rolagem finas, só aparecem no hover. */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 10px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.18);
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Utilitários */
+.ellipsis {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.muted {
+  color: var(--muted);
+}
+.link {
+  cursor: pointer;
+}
+.link:hover {
+  text-decoration: underline;
+  color: var(--text);
+}
+.section-title {
+  font: 600 12px var(--font);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0;
+}
+.glass {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--line);
+  transition: background 0.15s, transform 0.15s var(--ease);
+}
+.btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+.btn:active {
+  transform: scale(0.97);
+}
+.btn.primary {
+  background: var(--accent);
+  border-color: transparent;
+  color: #031418;
+}
+.btn.primary:hover {
+  background: #4fd6e3;
+}
+
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  color: var(--muted);
+  transition: color 0.15s, background 0.15s, transform 0.15s var(--ease);
+}
+.icon-btn:hover {
+  color: var(--text);
+  background: var(--panel-hover);
+}
+.icon-btn:active {
+  transform: scale(0.92);
+}
+.icon-btn.on {
+  color: var(--accent);
+}
+
+.skeleton {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.05) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s linear infinite;
+  border-radius: var(--radius);
+}
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

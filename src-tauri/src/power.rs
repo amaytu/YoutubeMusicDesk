@@ -7,16 +7,20 @@
 //!   não há impacto no áudio, que roda nos processos do WebView2.
 
 use std::sync::atomic::{AtomicBool, Ordering};
-use tauri::{Runtime, WebviewWindow};
+use tauri::{AppHandle, Manager, Runtime};
 
 static IN_BACKGROUND: AtomicBool = AtomicBool::new(false);
 
-pub fn set_background<R: Runtime>(window: &WebviewWindow<R>, background: bool) {
+/// Aplica (ou desfaz) o modo economia em todas as webviews do app.
+pub fn set_background<R: Runtime>(app: &AppHandle<R>, background: bool) {
     // Evita chamadas repetidas (Resized dispara várias vezes).
     if IN_BACKGROUND.swap(background, Ordering::SeqCst) == background {
         return;
     }
-    platform::apply(window, background);
+    for window in app.webview_windows().values() {
+        platform::apply_webview(window, background);
+    }
+    platform::set_eco_qos(background);
 }
 
 #[cfg(windows)]
@@ -33,7 +37,7 @@ mod platform {
         PROCESS_POWER_THROTTLING_STATE,
     };
 
-    pub fn apply<R: Runtime>(window: &WebviewWindow<R>, background: bool) {
+    pub fn apply_webview<R: Runtime>(window: &WebviewWindow<R>, background: bool) {
         let _ = window.with_webview(move |wv| unsafe {
             let level = if background {
                 COREWEBVIEW2_MEMORY_USAGE_TARGET_LEVEL_LOW
@@ -47,10 +51,9 @@ mod platform {
                 }
             }
         });
-        set_eco_qos(background);
     }
 
-    fn set_eco_qos(enabled: bool) {
+    pub fn set_eco_qos(enabled: bool) {
         let state = PROCESS_POWER_THROTTLING_STATE {
             Version: PROCESS_POWER_THROTTLING_CURRENT_VERSION,
             // ControlMask 0 = devolve a decisão ao Windows.
@@ -79,5 +82,6 @@ mod platform {
 #[cfg(not(windows))]
 mod platform {
     use tauri::{Runtime, WebviewWindow};
-    pub fn apply<R: Runtime>(_window: &WebviewWindow<R>, _background: bool) {}
+    pub fn apply_webview<R: Runtime>(_window: &WebviewWindow<R>, _background: bool) {}
+    pub fn set_eco_qos(_enabled: bool) {}
 }

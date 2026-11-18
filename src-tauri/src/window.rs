@@ -1,12 +1,17 @@
-//! Criação da janela principal (WebView2 apontando para music.youtube.com).
+//! Janelas:
+//! - `main`: a interface própria (Svelte), sem moldura do Windows.
+//! - `player`: music.youtube.com oculto; toca o áudio e fornece os dados.
+//!   Só aparece durante o login do Google.
 
 use tauri::{
-    webview::NewWindowResponse, AppHandle, Manager, Runtime, Url, WebviewUrl, WebviewWindow,
-    WebviewWindowBuilder,
+    webview::{NewWindowResponse, PageLoadEvent},
+    AppHandle, LogicalSize, Manager, Runtime, Url, WebviewUrl, WebviewWindow, WebviewWindowBuilder,
 };
 use tauri_plugin_opener::OpenerExt;
 
-use crate::{login, power, settings, settings::Settings, tray, MAIN_WINDOW};
+use crate::{
+    bridge::Bridge, login, power, settings, settings::Settings, MAIN_WINDOW, PLAYER_WINDOW,
+};
 
 pub const HOME: &str = "https://music.youtube.com/";
 
@@ -23,6 +28,8 @@ const DISABLED_FEATURES: &[&str] = &[
     "AutofillServerCommunication",
 ];
 
+/// As duas janelas compartilham o mesmo processo do navegador, então usam
+/// exatamente os mesmos argumentos.
 fn browser_args(s: &Settings) -> String {
     let mut features = DISABLED_FEATURES.to_vec();
     if s.media_keys {
@@ -30,7 +37,8 @@ fn browser_args(s: &Settings) -> String {
         features.push("HardwareMediaKeyHandling");
     }
     let mut args = format!(
-        "--disable-features={} --process-per-site --disable-background-networking",
+        "--disable-features={} --process-per-site --disable-background-networking \
+         --autoplay-policy=no-user-gesture-required",
         features.join(",")
     );
     if let Some(extra) = s
@@ -44,56 +52,110 @@ fn browser_args(s: &Settings) -> String {
     args
 }
 
-pub fn create<R: Runtime>(app: &AppHandle<R>, s: &Settings, visible: bool) -> tauri::Result<()> {
+fn open_external<R: Runtime>(app: &AppHandle<R>, url: &Url) {
+    let _ = app.opener().open_url(url.as_str(), None::<&str>);
+}
+
+/// Interface principal.
+pub fn create_main<R: Runtime>(
+    app: &AppHandle<R>,
+    s: &Settings,
+    visible: bool,
+) -> tauri::Result<()> {
     let nav_app = app.clone();
     let popup_app = app.clone();
-
-    let mut builder = WebviewWindowBuilder::new(
-        app,
-        MAIN_WINDOW,
-        WebviewUrl::External(HOME.parse().unwrap()),
-    )
-    .title("YouTube Music Desk")
-    .inner_size(1200.0, 800.0)
-    .min_inner_size(420.0, 320.0)
-    .visible(false) // mostrada depois que o window-state restaurar posição/tamanho
-    .background_color(tauri::window::Color(3, 3, 3, 255))
-    .initialization_script(include_str!("inject.js"))
-    .on_navigation(move |url| {
-        if !is_allowed(url) {
-            let _ = nav_app.opener().open_url(url.as_str(), None::<&str>);
-            return false;
-        }
-        login::on_navigation(&nav_app, url)
-    })
-    .on_new_window(move |url, _features| {
-        // Links "abrir em nova aba" vão para o navegador padrão.
-        let _ = popup_app.opener().open_url(url.as_str(), None::<&str>);
-        NewWindowResponse::Deny
-    })
-    .on_document_title_changed(|w, title| tray::set_track(w.app_handle(), &title));
-
+    #[allow(unused_mut)]
+    let mut builder =
+        WebviewWindowBuilder::new(app, MAIN_WINDOW, WebviewUrl::App("index.html".into()))
+            .title("YouTube Music Desk")
+            .inner_size(1280.0, 820.0)
+            .min_inner_size(900.0, 600.0)
+            .decorations(false)
+            .visible(false) // mostrada depois que o window-state restaurar posição/tamanho
+            .background_color(tauri::window::Color(14, 14, 18, 255))
+            .on_navigation(move |url| {
+                // Só a própria UI navega dentro da janela; links vão para o navegador.
+                let local = matches!(url.scheme(), "tauri" | "asset")
+                    || matches!(url.host_str(), Some("tauri.localhost") | Some("localhost"));
+                if !local {
+                    open_external(&nav_app, url);
+                }
+                local
+            })
+            .on_new_window(move |url, _| {
+                open_external(&popup_app, &url);
+                NewWindowResponse::Deny
+            });
     #[cfg(windows)]
     {
         builder = builder.additional_browser_args(&browser_args(s));
     }
-    #[cfg(not(windows))]
-    let _ = browser_args(s);
-
-    if let Some(ua) = s.user_agent.as_deref().filter(|u| !u.trim().is_empty()) {
-        builder = builder.user_agent(ua);
-    }
-
     let window = builder.build()?;
     if visible {
         show_window(&window);
     } else if s.economy_when_hidden {
-        power::set_background(&window, true);
+        power::set_background(app, true);
     }
     Ok(())
 }
 
-/// Domínios que podem abrir dentro do app (YouTube + login do Google).
+/// YouTube Music oculto (motor de reprodução e dados).
+pub fn create_player<R: Runtime>(app: &AppHandle<R>, s: &Settings) -> tauri::Result<()> {
+    let nav_app = app.clone();
+    let popup_app = app.clone();
+    let mut builder = WebviewWindowBuilder::new(
+        app,
+        PLAYER_WINDOW,
+        WebviewUrl::External(HOME.parse().unwrap()),
+    )
+    .title("Entrar no YouTube Music")
+    .inner_size(520.0, 720.0)
+    .center()
+    .visible(false)
+    .skip_taskbar(true)
+    .background_color(tauri::window::Color(3, 3, 3, 255))
+    .initialization_script(include_str!("bridge.js"))
+    .on_navigation(move |url| {
+        if !is_allowed(url) {
+            open_external(&nav_app, url);
+            return false;
+        }
+        login::on_navigation(&nav_app, url)
+    })
+    .on_new_window(move |url, _| {
+        open_external(&popup_app, &url);
+        NewWindowResponse::Deny
+    })
+    .on_page_load(|w, payload| {
+        if payload.event() == PageLoadEvent::Started {
+            w.app_handle().state::<Bridge>().on_reload();
+        }
+    });
+    #[cfg(windows)]
+    {
+        builder = builder.additional_browser_args(&browser_args(s));
+    }
+    if let Some(ua) = s.user_agent.as_deref().filter(|u| !u.trim().is_empty()) {
+        builder = builder.user_agent(ua);
+    }
+    #[cfg(not(windows))]
+    let _ = browser_args(s);
+    builder.build()?;
+    Ok(())
+}
+
+/// Mostra a janela do player para o login do Google.
+pub fn show_player_for_login<R: Runtime>(app: &AppHandle<R>) -> Option<WebviewWindow<R>> {
+    let p = app.get_webview_window(PLAYER_WINDOW)?;
+    let _ = p.set_size(LogicalSize::new(520.0, 720.0));
+    let _ = p.center();
+    let _ = p.set_skip_taskbar(false);
+    let _ = p.show();
+    let _ = p.set_focus();
+    Some(p)
+}
+
+/// Domínios que podem abrir dentro do player (YouTube + login do Google).
 fn is_allowed(url: &Url) -> bool {
     match url.scheme() {
         "https" => {}
@@ -125,7 +187,7 @@ fn show_window<R: Runtime>(w: &WebviewWindow<R>) {
     let _ = w.show();
     let _ = w.unminimize();
     let _ = w.set_focus();
-    power::set_background(w, false);
+    power::set_background(w.app_handle(), false);
 }
 
 pub fn show<R: Runtime>(app: &AppHandle<R>) {
@@ -138,7 +200,7 @@ pub fn hide<R: Runtime>(app: &AppHandle<R>) {
     if let Some(w) = app.get_webview_window(MAIN_WINDOW) {
         let _ = w.hide();
         if settings::get(app).economy_when_hidden {
-            power::set_background(&w, true);
+            power::set_background(app, true);
         }
     }
 }
@@ -157,13 +219,14 @@ pub fn toggle<R: Runtime>(app: &AppHandle<R>) {
 
 /// Chamado em `Resized`: minimizar também ativa o modo economia.
 pub fn on_resized<R: Runtime>(w: &WebviewWindow<R>) {
-    if !settings::get(w.app_handle()).economy_when_hidden {
+    let app = w.app_handle();
+    if !settings::get(app).economy_when_hidden {
         return;
     }
     if w.is_minimized().unwrap_or(false) {
-        power::set_background(w, true);
+        power::set_background(app, true);
     } else if w.is_visible().unwrap_or(false) {
-        power::set_background(w, false);
+        power::set_background(app, false);
     }
 }
 

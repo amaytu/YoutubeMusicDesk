@@ -1,0 +1,69 @@
+<script lang="ts" module>
+  // Ícones próprios em SVG (24x24). Traço = stroke; "f:" = preenchido.
+  const ICONS: Record<string, string> = {
+    play: "f:M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z",
+    pause: "f:M7 5h3.2v14H7zM13.8 5H17v14h-3.2z",
+    next: "f:M6 6.2v11.6a.8.8 0 0 0 1.25.66L15.5 12.7a.8.8 0 0 0 0-1.4L7.25 5.54A.8.8 0 0 0 6 6.2zM16.6 5.5h2v13h-2z",
+    prev: "f:M18 6.2v11.6a.8.8 0 0 1-1.25.66L8.5 12.7a.8.8 0 0 1 0-1.4l8.25-5.76A.8.8 0 0 1 18 6.2zM5.4 5.5h2v13h-2z",
+    shuffle: "M3 7h3.5c2 0 3.2 1 4.3 2.6l2.4 3.8c1.1 1.6 2.3 2.6 4.3 2.6H21M17.5 13.5 21 17l-3.5 3.5M3 17h3.5c1.4 0 2.4-.5 3.2-1.3M13.8 8.3c.8-.8 1.8-1.3 3.2-1.3H21M17.5 3.5 21 7l-3.5 3.5",
+    repeat: "M4 11V9.5A3.5 3.5 0 0 1 7.5 6H19M16 3l3 3-3 3M20 13v1.5a3.5 3.5 0 0 1-3.5 3.5H5M8 21l-3-3 3-3",
+    heart: "M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7a4.3 4.3 0 0 1 7.5 2.8C19.5 15.4 12 20 12 20z",
+    "heart-fill": "f:M12 20.6c-.2 0-.4-.1-.5-.2C10.9 20 3.7 15.5 3.7 9.8a5 5 0 0 1 8.3-3.7 5 5 0 0 1 8.3 3.7c0 5.7-7.2 10.2-7.8 10.6-.1.1-.3.2-.5.2z",
+    volume: "M4 9.5h3.2L12 5.5v13l-4.8-4H4zM15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11",
+    "volume-low": "M4 9.5h3.2L12 5.5v13l-4.8-4H4zM15.5 9a4 4 0 0 1 0 6",
+    mute: "M4 9.5h3.2L12 5.5v13l-4.8-4H4zM16 9.5l5 5M21 9.5l-5 5",
+    queue: "M4 6h16M4 11h16M4 16h9M17 14.5v6l4.5-3z",
+    lyrics: "M12 4a3 3 0 0 1 3 3v4a3 3 0 0 1-6 0V7a3 3 0 0 1 3-3zM6 11a6 6 0 0 0 12 0M12 17v3M9 20h6",
+    expand: "M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7",
+    collapse: "M6 9l6 6 6-6",
+    search: "M10.5 4a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13zM15.5 15.5 20 20",
+    home: "M4 11 12 4l8 7M6 9.5V20h4.5v-5.5h3V20H18V9.5",
+    note: "M9 17.5V6l10-2v11.5M9 17.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0zM19 15.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z",
+    mic: "M12 3.5a3.5 3.5 0 0 1 3.5 3.5v1.5a3.5 3.5 0 0 1-7 0V7A3.5 3.5 0 0 1 12 3.5zM5.5 20.5c.5-3.4 3.2-5.5 6.5-5.5s6 2.1 6.5 5.5",
+    album: "M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18zM12 9.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5z",
+    playlist: "M4 6h12M4 11h12M4 16h7M15 19.5V13l5-1",
+    back: "M19 12H5M11 6l-6 6 6 6",
+    close: "M6 6l12 12M18 6 6 18",
+    min: "M5 12h14",
+    max: "M5.5 5.5h13v13h-13z",
+    restore: "M8 8h11v11H8zM5 15V5h10",
+    sort: "M7 4v16M4 17l3 3 3-3M14 6h6M14 11h4.5M14 16h3",
+    filter: "M4 6h16M7 12h10M10 18h4",
+    user: "M12 4a4 4 0 1 1 0 8 4 4 0 0 1 0-8zM4.5 20.5c.7-3.6 3.8-6 7.5-6s6.8 2.4 7.5 6",
+    logout: "M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l-4-4 4-4M6 12h10",
+    google: "M20.5 12.2c0-.6-.1-1.2-.2-1.7H12v3.3h4.8a4.1 4.1 0 0 1-1.8 2.7v2.2h2.9c1.7-1.6 2.6-3.9 2.6-6.5zM12 21c2.4 0 4.5-.8 5.9-2.2L15 16.6c-.8.5-1.8.9-3 .9-2.3 0-4.3-1.6-5-3.7H4v2.3A9 9 0 0 0 12 21zM7 13.8a5.4 5.4 0 0 1 0-3.6V7.9H4a9 9 0 0 0 0 8.2zM12 6.5c1.3 0 2.5.5 3.4 1.3l2.6-2.6A9 9 0 0 0 4 7.9l3 2.3c.7-2.1 2.7-3.7 5-3.7z",
+    radio: "M4.5 9.5h15v10h-15zM8 9.5 16 4.5M8.5 14.5a1.5 1.5 0 1 0 3 0 1.5 1.5 0 0 0-3 0M15 13h2M15 16h2",
+    more: "f:M6 10.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zM12 10.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zM18 10.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z",
+    chevron: "M9 6l6 6-6 6",
+    "chevron-left": "M15 6l-6 6 6 6",
+    refresh: "M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4.5v4h-4",
+  };
+</script>
+
+<script lang="ts">
+  let { name, size = 20, class: cls = "" }: { name: string; size?: number; class?: string } = $props();
+  const d = $derived(ICONS[name] ?? "");
+  const filled = $derived(d.startsWith("f:"));
+</script>
+
+<svg
+  class={cls}
+  width={size}
+  height={size}
+  viewBox="0 0 24 24"
+  aria-hidden="true"
+  fill={filled ? "currentColor" : "none"}
+  stroke={filled ? "none" : "currentColor"}
+  stroke-width="1.8"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d={filled ? d.slice(2) : d} />
+</svg>
+
+<style>
+  svg {
+    flex: none;
+    display: block;
+  }
+</style>

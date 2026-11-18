@@ -1,9 +1,7 @@
 //! Controles de reprodução: teclas de mídia globais + comandos enviados à página.
 
-use tauri::{plugin::TauriPlugin, AppHandle, Manager, Runtime};
+use tauri::{plugin::TauriPlugin, AppHandle, Runtime};
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Shortcut, ShortcutState};
-
-use crate::MAIN_WINDOW;
 
 #[derive(Clone, Copy)]
 pub enum Cmd {
@@ -61,9 +59,7 @@ pub fn set_enabled<R: Runtime>(app: &AppHandle<R>, enabled: bool) {
     }
 }
 
-/// Executa o comando na página do YouTube Music (script injetado em `inject.js`).
+/// Executa o comando no player oculto (ver `bridge.js`).
 pub fn send<R: Runtime>(app: &AppHandle<R>, cmd: Cmd) {
-    if let Some(w) = app.get_webview_window(MAIN_WINDOW) {
-        let _ = w.eval(format!("window.__ymd && window.__ymd.{}()", cmd.js()));
-    }
+    crate::bridge::cmd(app, cmd.js(), serde_json::Value::Null);
 }

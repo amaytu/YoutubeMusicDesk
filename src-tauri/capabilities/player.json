@@ -1,0 +1,8 @@
+{
+  "$schema": "../gen/schemas/remote-schema.json",
+  "identifier": "player-bridge",
+  "description": "Página do YouTube Music: só pode responder chamadas e enviar estado do player.",
+  "windows": ["player"],
+  "remote": { "urls": ["https://music.youtube.com/*"] },
+  "permissions": ["allow-bridge-reply", "allow-bridge-event"]
+}

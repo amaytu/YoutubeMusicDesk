@@ -127,8 +127,11 @@ pub fn create<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
                 let _ = keys.set_checked(s.media_keys);
             }
             "reload" => {
-                if let Some(w) = app.get_webview_window(crate::MAIN_WINDOW) {
-                    let _ = w.eval("location.reload()");
+                // Recarrega o player oculto e a interface.
+                for label in [crate::PLAYER_WINDOW, crate::MAIN_WINDOW] {
+                    if let Some(w) = app.get_webview_window(label) {
+                        let _ = w.eval("location.reload()");
+                    }
                 }
             }
             "quit" => app.exit(0),
@@ -142,19 +145,31 @@ pub fn create<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
     Ok(())
 }
 
-/// Mostra a faixa atual no tooltip (vem do título da página).
-pub fn set_track<R: Runtime>(app: &AppHandle<R>, page_title: &str) {
+/// Mostra a faixa atual no tooltip (estado vindo do player).
+pub fn set_track<R: Runtime>(app: &AppHandle<R>, state: &serde_json::Value) {
     let Some(tray) = app.tray_by_id(TRAY_ID) else {
         return;
     };
-    let track = page_title.trim_end_matches("- YouTube Music").trim();
-    let text = if track.is_empty() || track == "YouTube Music" {
+    let field = |k: &str| {
+        state
+            .get(k)
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string()
+    };
+    let (title, artist) = (field("title"), field("artist"));
+    let text = if title.is_empty() {
         APP_NAME.to_string()
     } else {
+        let mut t = if artist.is_empty() {
+            title
+        } else {
+            format!("{title} — {artist}")
+        };
         // Tooltip do Windows aceita no máximo 127 caracteres.
-        let mut t: String = format!("{track}\n{APP_NAME}");
-        if t.chars().count() > 127 {
-            t = t.chars().take(124).collect::<String>() + "...";
+        if t.chars().count() > 120 {
+            t = t.chars().take(117).collect::<String>() + "...";
         }
         t
     };
