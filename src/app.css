@@ -10,10 +10,10 @@
   --muted: rgba(235, 235, 245, 0.62);
   --faint: rgba(235, 235, 245, 0.38);
   --line: rgba(255, 255, 255, 0.1);
-  --accent: #34d3e2;
-  --accent-2: #8b7bff;
-  --accent-soft: rgba(52, 211, 226, 0.16);
-  --accent-glow: rgba(52, 211, 226, 0.45);
+  --accent: #ff2d46;
+  --accent-2: #ff8a3d;
+  --accent-soft: rgba(255, 45, 70, 0.16);
+  --accent-glow: rgba(255, 45, 70, 0.45);
 
   /* material de vidro */
   --glass-tint: rgba(255, 255, 255, 0.09);
@@ -232,13 +232,13 @@ html.solid .sheen::after {
   transition-duration: 0.1s;
 }
 .btn.primary {
-  color: #03161a;
-  background: linear-gradient(160deg, #7ef0fa, var(--accent) 55%, #1fb3c4);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 -2px 6px rgba(0, 80, 90, 0.35) inset,
+  color: #ffffff;
+  background: linear-gradient(160deg, #ff7a87, var(--accent) 55%, #cf0a24);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 -2px 6px rgba(110, 0, 18, 0.4) inset,
     0 8px 22px -6px var(--accent-glow);
 }
 .btn.primary:hover {
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset, 0 -2px 6px rgba(0, 80, 90, 0.35) inset,
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset, 0 -2px 6px rgba(110, 0, 18, 0.4) inset,
     0 12px 30px -6px var(--accent-glow);
 }
 /* reflexo que atravessa o botão no hover */
@@ -315,8 +315,8 @@ html.solid .sheen::after {
   transition: box-shadow 0.2s, background 0.2s;
 }
 .field:focus-within {
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset, 0 0 0 1px rgba(52, 211, 226, 0.6) inset,
-    0 0 0 4px rgba(52, 211, 226, 0.12);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset, 0 0 0 1px rgba(255, 45, 70, 0.6) inset,
+    0 0 0 4px rgba(255, 45, 70, 0.12);
 }
 .field input,
 .field select {

@@ -24,6 +24,11 @@ export class Crossfade {
     });
   }
 
+  /** onerror da <img>: descarta a camada (a anterior continua até a próxima). */
+  failed(id: number) {
+    this.layers = this.layers.filter((l) => l.id !== id);
+  }
+
   /** onload da <img>: mostra esta e agenda a remoção das anteriores. */
   loaded(id: number) {
     if (id < this.shown) return;

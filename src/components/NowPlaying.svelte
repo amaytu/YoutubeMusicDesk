@@ -50,6 +50,7 @@
   // Recarrega fila/filtros quando a faixa muda (só com a aba aberta).
   $effect(() => {
     s.videoId;
+    player.queueVersion;
     if (tab === "queue" || tab === "upnext") loadQueue();
     if (tab === "upnext") loadChips();
   });
@@ -88,7 +89,7 @@
 <div class="now">
   <div class="backdrop" aria-hidden="true">
     {#each bg.layers as l (l.id)}
-      <img src={l.url} alt="" decoding="async" class:in={l.id === bg.shown} onload={() => bg.loaded(l.id)} />
+      <img src={l.url} alt="" decoding="async" class:in={l.id === bg.shown} onload={() => bg.loaded(l.id)} onerror={() => bg.failed(l.id)} />
     {/each}
     <div class="shade"></div>
   </div>
@@ -192,9 +193,11 @@
           <Icon name={s.playing ? "pause" : "play"} size={22} />
         </button>
         <button class="icon-btn" onclick={() => player.next()} title="Próxima"><Icon name="next" size={20} /></button>
-        <button class="pill" onclick={() => player.shuffle()} title="Aleatório"><Icon name="shuffle" size={16} /></button>
-        <button class="icon-btn" class:on={s.repeat !== "NONE"} onclick={() => player.cycleRepeat()} title="Repetir">
-          <Icon name="repeat" size={18} />
+        <button class="pill" class:off={!player.shuffleOn} onclick={() => player.shuffle()} title={player.shuffleOn ? "Aleatório: ligado" : "Aleatório: desligado"}>
+          <Icon name="shuffle" size={16} />
+        </button>
+        <button class="icon-btn rep" class:on={s.repeat === "ONE"} onclick={() => player.cycleRepeat()} title={s.repeat === "ONE" ? "Repetindo esta música" : "Tocando em sequência"}>
+          <Icon name={s.repeat === "ONE" ? "repeat-one" : "repeat"} size={18} />
         </button>
         <span class="spacer"></span>
         <button class="icon-btn heart" class:on={s.liked} onclick={() => player.like()} title="Curtir">
@@ -505,12 +508,20 @@
     display: grid;
     place-items: center;
     background: var(--accent);
-    color: #031418;
+    color: #ffffff;
     transition: transform 0.4s var(--spring), filter 0.2s;
   }
   .pill:hover {
     transform: scale(1.1);
     filter: brightness(1.1);
+  }
+  .pill.off {
+    background: transparent;
+    color: var(--muted);
+  }
+  .pill.off:hover {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.12);
   }
   .heart.on {
     color: #ff5c8a;

@@ -531,8 +531,29 @@
       Number(v) > 0 ? p.unMute?.() : p.mute?.();
       emitState();
     },
-    shuffle() { click("ytmusic-player-bar .shuffle", "ytmusic-player-bar tp-yt-paper-icon-button.shuffle"); },
-    repeat() { click("ytmusic-player-bar .repeat", "ytmusic-player-bar tp-yt-paper-icon-button.repeat"); setTimeout(emitState, 150); },
+    /** Embaralha a fila (o YT Music não tem "desembaralhar"). */
+    shuffle() {
+      const ok = click(
+        "ytmusic-player-bar .shuffle",
+        "ytmusic-player-bar tp-yt-paper-icon-button.shuffle",
+        "ytmusic-player-bar #right-controls .shuffle",
+        'ytmusic-player-bar [aria-label*="aleat" i]',
+        'ytmusic-player-bar [aria-label*="shuffle" i]',
+        "ytmusic-player-page .shuffle",
+      );
+      // Sem o botão: reabre a playlist/rádio atual em modo aleatório.
+      if (!ok) {
+        const list = new URL(location.href).searchParams.get("list");
+        if (list) play({ playlistId: list, shuffle: true });
+      }
+    },
+    /** Repetir: só "em sequência" (false) ou "repetir esta música" (true). */
+    repeatOne(on) {
+      repeatOne = !!on;
+      const v = q("video");
+      if (v) v.loop = repeatOne;
+      emitState();
+    },
     like() {
       click("ytmusic-player-bar ytmusic-like-button-renderer #button-shape-like button", "ytmusic-player-bar ytmusic-like-button-renderer .like");
       setTimeout(emitState, 300);
@@ -564,15 +585,22 @@
   function snapshot() {
     const p = player();
     const v = q("video");
+    // O YT Music às vezes troca o <video> (ex.: ao embaralhar): reconecta os eventos.
+    if (v) hookVideo(v);
     const md = navigator.mediaSession?.metadata;
     const bar = q("ytmusic-player-bar");
     const like = q("ytmusic-like-button-renderer", bar ?? document)?.getAttribute("like-status");
-    const art = md?.artwork?.length ? md.artwork[md.artwork.length - 1].src : "";
+    const vid = p?.getVideoData?.()?.video_id ?? "";
+    const art = md?.artwork?.length
+      ? md.artwork[md.artwork.length - 1].src
+      : vid
+        ? `https://i.ytimg.com/vi/${vid}/hqdefault.jpg`
+        : "";
     const albumLink = [...(bar?.querySelectorAll(".byline a") ?? [])];
     const artistLinks = albumLink.filter((a) => a.href.includes("channel/") || a.href.includes("browse/UC"));
     const albumA = albumLink.find((a) => a.href.includes("browse/MPRE"));
     return {
-      videoId: p?.getVideoData?.()?.video_id ?? "",
+      videoId: vid,
       title: md?.title ?? "",
       artist: md?.artist ?? "",
       album: md?.album ?? "",
@@ -585,19 +613,37 @@
       volume: p?.getVolume?.() ?? 100,
       muted: !!p?.isMuted?.(),
       liked: like === "LIKE",
-      repeat: bar?.getAttribute("repeat-mode") ?? bar?.repeatMode ?? "NONE",
+      repeat: repeatOne ? "ONE" : "NONE",
       at: Date.now(),
     };
   }
 
+  let repeatOne = false;
   let stateQueued = false;
+  /** Último estado enviado: base para detectar desvio do relógio da UI. */
+  let last = { time: 0, at: 0, playing: false, videoId: "" };
   function emitState() {
     if (stateQueued) return;
     stateQueued = true;
     setTimeout(() => {
       stateQueued = false;
-      emit("state", snapshot());
+      const snap = snapshot();
+      last = { time: snap.time, at: snap.at, playing: snap.playing, videoId: snap.videoId };
+      emit("state", snap);
     }, 50);
+  }
+
+  /**
+   * Correção de relógio: a UI interpola o tempo a partir do último estado.
+   * Enquanto toca, reenvia a cada 5 s ou na hora se o tempo real divergir
+   * (troca de faixa sem evento, seek interno, buffer etc.).
+   */
+  function onTimeUpdate(e) {
+    const v = e.currentTarget;
+    const now = Date.now();
+    const expected = last.playing ? last.time + (now - last.at) / 1000 : last.time;
+    const vid = player()?.getVideoData?.()?.video_id ?? "";
+    if (vid !== last.videoId || Math.abs(v.currentTime - expected) > 1.5 || now - last.at > 5000) emitState();
   }
 
   // Detecta troca de faixa no instante em que o YT Music atualiza o mediaSession.
@@ -617,6 +663,9 @@
     v.__ymdHooked = true;
     for (const ev of ["play", "pause", "ended", "seeked", "loadedmetadata", "durationchange", "ratechange", "volumechange", "emptied"])
       v.addEventListener(ev, emitState);
+    v.addEventListener("timeupdate", onTimeUpdate);
+    // O YT Music pode resetar o loop ao trocar de faixa: reaplica o modo escolhido.
+    v.addEventListener("loadedmetadata", () => (v.loop = repeatOne));
     // "Ainda está ouvindo?" -> confirma automaticamente.
     v.addEventListener("pause", () =>
       setTimeout(() => {
@@ -651,13 +700,23 @@
       await ytcfgReady();
     } catch (_) {}
     emit("ready", { signedIn: !!window.ytcfg?.get?.("LOGGED_IN") });
-    // O <video> é criado sob demanda; observa só até ele existir.
+    // O <video> é criado sob demanda e pode ser trocado (ex.: ao embaralhar).
+    // Observa o documento só até ele existir; depois, só o contêiner do vídeo.
+    const watchContainer = (v) => {
+      const box = v.closest(".html5-video-container") ?? v.parentElement;
+      if (!box || box.__ymdWatched) return;
+      box.__ymdWatched = true;
+      new MutationObserver(() => {
+        const nv = q("video");
+        if (nv && !nv.__ymdHooked) { hookVideo(nv); watchContainer(nv); emitState(); }
+      }).observe(box, { childList: true });
+    };
     const v = q("video");
-    if (v) hookVideo(v);
+    if (v) { hookVideo(v); watchContainer(v); }
     else {
       const mo = new MutationObserver(() => {
         const v2 = q("video");
-        if (v2) { hookVideo(v2); mo.disconnect(); emitState(); }
+        if (v2) { hookVideo(v2); watchContainer(v2); mo.disconnect(); emitState(); }
       });
       mo.observe(document.documentElement, { childList: true, subtree: true });
     }

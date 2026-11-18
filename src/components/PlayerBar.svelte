@@ -64,7 +64,9 @@
 
   <div class="center">
     <div class="controls">
-      <button class="icon-btn small" onclick={() => player.shuffle()} title="Aleatório"><Icon name="shuffle" size={16} /></button>
+      <button class="icon-btn small" class:on={player.shuffleOn} onclick={() => player.shuffle()} title={player.shuffleOn ? "Aleatório: ligado" : "Aleatório: desligado"}>
+        <Icon name="shuffle" size={16} />
+      </button>
       <button class="icon-btn" onclick={() => player.prev()} title="Anterior"><Icon name="prev" size={18} /></button>
       <button class="play" class:playing={s.playing} onclick={() => player.toggle()} title={s.playing ? "Pausar" : "Tocar"} disabled={!player.hasTrack}>
         <span class="ico" class:swap={s.playing}>
@@ -72,9 +74,8 @@
         </span>
       </button>
       <button class="icon-btn" onclick={() => player.next()} title="Próxima"><Icon name="next" size={18} /></button>
-      <button class="icon-btn small" class:on={s.repeat !== "NONE"} onclick={() => player.cycleRepeat()} title="Repetir">
-        <Icon name="repeat" size={16} />
-        {#if s.repeat === "ONE"}<span class="one">1</span>{/if}
+      <button class="icon-btn small" class:on={s.repeat === "ONE"} onclick={() => player.cycleRepeat()} title={s.repeat === "ONE" ? "Repetindo esta música" : "Tocando em sequência"}>
+        <Icon name={s.repeat === "ONE" ? "repeat-one" : "repeat"} size={16} />
       </button>
     </div>
     <div class="progress">
@@ -252,7 +253,7 @@
     position: absolute;
     inset: -5px;
     border-radius: 50%;
-    border: 1.5px solid rgba(52, 211, 226, 0.55);
+    border: 1.5px solid rgba(255, 45, 70, 0.55);
     animation: pulse 2.4s ease-out infinite;
   }
   @keyframes pulse {
@@ -303,13 +304,6 @@
     align-items: center;
     justify-content: flex-end;
     gap: 2px;
-  }
-  .one {
-    position: absolute;
-    right: 3px;
-    bottom: 3px;
-    font-size: 9px;
-    font-weight: 700;
   }
   .heart.pop :global(svg) {
     animation: heart 0.5s var(--spring);

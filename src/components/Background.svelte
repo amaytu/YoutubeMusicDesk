@@ -12,7 +12,7 @@
 
 <div class="bg" style:--strength={strength} aria-hidden="true">
   {#each bg.layers as l (l.id)}
-    <img src={l.url} alt="" decoding="async" class:in={l.id === bg.shown} onload={() => bg.loaded(l.id)} />
+    <img src={l.url} alt="" decoding="async" class:in={l.id === bg.shown} onload={() => bg.loaded(l.id)} onerror={() => bg.failed(l.id)} />
   {/each}
   <div class="shade"></div>
 </div>
@@ -22,7 +22,7 @@
     position: absolute;
     inset: 0;
     overflow: hidden;
-    background: radial-gradient(120% 80% at 20% 0%, #1b2a3a 0%, var(--bg) 60%);
+    background: radial-gradient(120% 80% at 20% 0%, #2a1418 0%, var(--bg) 60%);
     z-index: 0;
     contain: strict;
   }

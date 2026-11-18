@@ -45,7 +45,7 @@
   input::-webkit-slider-runnable-track {
     height: 4px;
     border-radius: 4px;
-    background: linear-gradient(to right, #7ef0fa, var(--accent) var(--p), rgba(255, 255, 255, 0.16) var(--p));
+    background: linear-gradient(to right, #ff7a87, var(--accent) var(--p), rgba(255, 255, 255, 0.16) var(--p));
     box-shadow: 0 0 10px -2px var(--accent-glow);
     transition: height 0.25s var(--spring);
   }

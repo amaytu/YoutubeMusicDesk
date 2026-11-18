@@ -259,7 +259,7 @@
   }
   .t {
     font: 500 14px/1.35 var(--font);
-    color: rgba(52, 211, 226, 0.55);
+    color: rgba(255, 45, 70, 0.55);
     user-select: text;
   }
   .ln.cur .t {

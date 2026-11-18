@@ -33,6 +33,10 @@ class Player {
   /** Incrementa quando a conta muda; telas usam para recarregar. */
   authVersion = $state(0);
   nowPlaying = $state<null | NowTab>(null);
+  /** Aleatório ligado (o YT Music não informa; controlado aqui). */
+  shuffleOn = $state(false);
+  /** Incrementa quando a fila muda por ação nossa (aleatório, filtros). */
+  queueVersion = $state(0);
 
   #seeking = false;
   #timer: ReturnType<typeof setInterval> | null = null;
@@ -53,7 +57,10 @@ class Player {
     document.addEventListener("visibilitychange", () => this.#syncTimer());
   }
 
+  #lastUpdate = Date.now();
+
   #apply(s: PlayerState) {
+    this.#lastUpdate = Date.now();
     this.state = s;
     if (!this.#seeking) this.time = s.time;
     this.#syncTimer();
@@ -64,6 +71,11 @@ class Player {
     const run = this.state.playing && !document.hidden;
     if (run && !this.#timer) {
       this.#timer = setInterval(() => {
+        // Vigia: tocando e sem notícias do player há 12 s -> pede o estado real.
+        if (Date.now() - this.#lastUpdate > 12000) {
+          this.#lastUpdate = Date.now();
+          api.state().then((st) => st && this.#apply(st)).catch(() => {});
+        }
         if (this.#seeking) return;
         const s = this.state;
         this.time = Math.min(s.duration || Infinity, s.time + (Date.now() - s.at) / 1000);
@@ -120,25 +132,33 @@ class Player {
     this.state = { ...this.state, liked: !this.state.liked };
     playerCmd("like");
   }
+  /** Alterna entre "em sequência" e "repetir esta música". */
   cycleRepeat() {
-    const order: RepeatMode[] = ["NONE", "ALL", "ONE"];
-    const next = order[(order.indexOf(this.state.repeat) + 1) % order.length];
+    const next: RepeatMode = this.state.repeat === "ONE" ? "NONE" : "ONE";
     this.state = { ...this.state, repeat: next };
-    playerCmd("repeat");
+    playerCmd("repeatOne", next === "ONE");
   }
+  /** Liga: embaralha a fila. Desliga: a fila segue na ordem atual. */
   shuffle() {
-    playerCmd("shuffle");
+    this.shuffleOn = !this.shuffleOn;
+    if (this.shuffleOn) {
+      playerCmd("shuffle");
+      setTimeout(() => this.queueVersion++, 900);
+    }
   }
 
   playTrack(t: Track, playlistId?: string) {
+    this.shuffleOn = false;
     this.state = { ...this.state, title: t.title, thumb: t.thumb ?? this.state.thumb, playing: true };
     playerCmd("playItem", { videoId: t.videoId, playlistId: playlistId ?? t.playlistId });
   }
   playCollection(c: Pick<Collection, "playlistId" | "tracks">, shuffle = false) {
+    this.shuffleOn = shuffle;
     if (c.playlistId) playerCmd("playItem", { playlistId: c.playlistId, shuffle });
     else if (c.tracks[0]) this.playTrack(shuffle ? c.tracks[Math.floor(Math.random() * c.tracks.length)] : c.tracks[0]);
   }
   playPlaylistId(playlistId: string, shuffle = false) {
+    this.shuffleOn = shuffle;
     playerCmd("playItem", { playlistId, shuffle });
   }
   playQueueItem(t: Track) {

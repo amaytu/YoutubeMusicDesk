@@ -79,10 +79,10 @@
     transform: perspective(700px) scale(0.97);
   }
   .card.selected {
-    background: linear-gradient(160deg, rgba(52, 211, 226, 0.24), rgba(52, 211, 226, 0.06));
+    background: linear-gradient(160deg, rgba(255, 45, 70, 0.24), rgba(255, 45, 70, 0.06));
     box-shadow:
       0 1px 0 rgba(255, 255, 255, 0.3) inset,
-      0 0 0 1px rgba(52, 211, 226, 0.55) inset,
+      0 0 0 1px rgba(255, 45, 70, 0.55) inset,
       0 14px 34px -14px var(--accent-glow);
   }
   .hit {
@@ -128,8 +128,8 @@
     border-radius: 50%;
     display: grid;
     place-items: center;
-    color: #03161a;
-    background: radial-gradient(circle at 35% 25%, #9ff5fc, var(--accent) 60%, #1aa8b8);
+    color: #ffffff;
+    background: radial-gradient(circle at 35% 25%, #ff8f99, var(--accent) 60%, #c4001b);
     box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 10px 22px -6px rgba(0, 0, 0, 0.6);
     opacity: 0;
     transform: translateY(10px) scale(0.6);

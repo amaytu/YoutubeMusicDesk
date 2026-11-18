@@ -89,7 +89,7 @@ jobs:
             ## Download
             - **Instalador recomendado:** `YouTube.Music.Desk_${{ steps.ver.outputs.version }}_x64-setup.exe`
               (instala só para o seu usuário, sem pedir administrador)
-            - Alternativa: `YouTube.Music.Desk_${{ steps.ver.outputs.version }}_x64_en-US.msi`
+            - Alternativa: `YouTube.Music.Desk_${{ steps.ver.outputs.version }}_x64_pt-BR.msi`
 
             O instalador ainda não é assinado: na primeira execução o Windows SmartScreen pode avisar.
             Clique em **Mais informações → Executar assim mesmo**.

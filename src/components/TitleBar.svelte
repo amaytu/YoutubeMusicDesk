@@ -255,7 +255,7 @@
   }
   .search:focus-within {
     width: clamp(200px, 24vw, 340px);
-    box-shadow: var(--glass-shadow), 0 0 0 1px rgba(52, 211, 226, 0.55) inset, 0 0 0 4px rgba(52, 211, 226, 0.12);
+    box-shadow: var(--glass-shadow), 0 0 0 1px rgba(255, 45, 70, 0.55) inset, 0 0 0 4px rgba(255, 45, 70, 0.12);
   }
   .search input {
     position: relative;

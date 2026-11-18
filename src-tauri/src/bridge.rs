@@ -201,7 +201,7 @@ pub fn bridge_event<R: Runtime>(
             if signed_in {
                 if let Some(p) = player(&app) {
                     if p.is_visible().unwrap_or(false) {
-                        let _ = p.hide();
+                        window::hide_player(&app);
                         window::show(&app);
                     }
                 }

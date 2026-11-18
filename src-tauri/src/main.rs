@@ -79,8 +79,7 @@ fn main() {
                 // Fechar a janela de login só a esconde; o player continua tocando.
                 (PLAYER_WINDOW, WindowEvent::CloseRequested { api, .. }) => {
                     api.prevent_close();
-                    let _ = win.hide();
-                    let _ = win.set_skip_taskbar(true);
+                    window::hide_player(app);
                     window::show(app);
                 }
                 (MAIN_WINDOW, WindowEvent::CloseRequested { api, .. }) => {

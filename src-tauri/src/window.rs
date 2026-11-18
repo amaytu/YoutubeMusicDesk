@@ -14,6 +14,7 @@ use crate::{
 };
 
 pub const HOME: &str = "https://music.youtube.com/";
+const PLAYER_HIDDEN_SIZE: (f64, f64) = (1280.0, 800.0);
 
 /// Recursos do WebView2 que não servem para um player de música.
 /// Os três primeiros são os padrões do wry (passar args substitui os padrões).
@@ -112,7 +113,8 @@ pub fn create_player<R: Runtime>(app: &AppHandle<R>, s: &Settings) -> tauri::Res
         WebviewUrl::External(HOME.parse().unwrap()),
     )
     .title("Entrar no YouTube Music")
-    .inner_size(520.0, 720.0)
+    // Tamanho de desktop: no layout estreito o YT Music esconde aleatório/repetir.
+    .inner_size(PLAYER_HIDDEN_SIZE.0, PLAYER_HIDDEN_SIZE.1)
     .center()
     .visible(false)
     .skip_taskbar(true)
@@ -156,6 +158,15 @@ pub fn show_player_for_login<R: Runtime>(app: &AppHandle<R>) -> Option<WebviewWi
     let _ = p.show();
     let _ = p.set_focus();
     Some(p)
+}
+
+/// Esconde a janela de login e volta o player oculto ao tamanho de desktop.
+pub fn hide_player<R: Runtime>(app: &AppHandle<R>) {
+    if let Some(p) = app.get_webview_window(PLAYER_WINDOW) {
+        let _ = p.hide();
+        let _ = p.set_skip_taskbar(true);
+        let _ = p.set_size(LogicalSize::new(PLAYER_HIDDEN_SIZE.0, PLAYER_HIDDEN_SIZE.1));
+    }
 }
 
 /// Domínios que podem abrir dentro do player (YouTube + login do Google).

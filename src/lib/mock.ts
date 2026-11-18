@@ -181,7 +181,8 @@ export function cmd(name: string, arg: any) {
     case "seek": state.time = Number(arg); break;
     case "volume": state.volume = Number(arg); state.muted = state.volume === 0; break;
     case "like": state.liked = !state.liked; break;
-    case "repeat": state.repeat = state.repeat === "NONE" ? "ALL" : state.repeat === "ALL" ? "ONE" : "NONE"; break;
+    case "repeatOne": state.repeat = arg ? "ONE" : "NONE"; break;
+    case "shuffle": queue = [...queue.slice(0, qi + 1), ...queue.slice(qi + 1).sort(() => rnd() - 0.5)]; break;
     case "selectQueueChip": {
       chip = Number(arg);
       const rest = (chip === 2 ? allTracks.slice(30, 45) : chip === 1 ? allTracks.slice(0, 12) : allTracks.slice(12, 30));

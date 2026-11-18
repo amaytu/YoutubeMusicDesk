@@ -124,6 +124,11 @@ Quando o app vai para a bandeja ou é minimizado, uma pílula aparece no topo da
 
 ## Download
 
+Instalador personalizado com o visual do app (tema escuro, logo e destaque vermelho).
+
+<img src="docs/installer.png" width="344">
+
+
 Baixe o instalador em [Releases](https://github.com/amaytu/YoutubeMusicDesk/releases/latest)
 (`*_x64-setup.exe`). Ainda não é assinado: se o SmartScreen avisar, use
 **Mais informações → Executar assim mesmo**.
