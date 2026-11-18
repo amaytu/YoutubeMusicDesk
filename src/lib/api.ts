@@ -50,6 +50,8 @@ export const api = {
   collection: (id: string) => cached<Collection>("collection", { id }),
   artist: (id: string) => cached<ArtistPage>("artist", { id }),
   lyrics: (videoId: string) => cached<Lyrics | null>("lyrics", { videoId }, 60 * 60_000),
+  timedLyrics: (videoId: string) =>
+    cached<{ lines: { t: number; text: string }[]; source: string } | null>("timedLyrics", { videoId }, 60 * 60_000),
   queue: () => call<Track[]>("queue"),
   queueChips: () => call<{ index: number; label: string; selected: boolean }[]>("queueChips"),
 };

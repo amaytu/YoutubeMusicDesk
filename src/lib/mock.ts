@@ -167,6 +167,7 @@ export async function call(method: string, args: any = {}): Promise<unknown> {
         text: "Acendo as luzes da cidade\nE o céu se apaga devagar\nTodo eco da saudade\nVolta pra me encontrar\n\nCorre, corre, horizonte\nLeva o que eu não sei dizer\nSe a noite for ponte\nAtravesso até você\n\n(letra de demonstração)",
         source: "Fonte: demonstração",
       });
+    case "timedLyrics": return wait(null, 60);
     case "queue": return wait(queue.map((t, i) => ({ ...t, index: i, selected: i === qi })), 80);
     case "queueChips": return wait(["Tudo", "Conhecidas", "Descobrir"].map((label, index) => ({ index, label, selected: index === chip })), 40);
   }

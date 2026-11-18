@@ -200,14 +200,17 @@
     throw new Error("YouTube Music não carregou");
   }
 
-  async function api(endpoint, body) {
+  /** Cliente mobile do YT Music: devolve letras com tempo (o web não). */
+  const MOBILE_CLIENT = { clientName: "ANDROID_MUSIC", clientVersion: "7.21.50", nameId: "21" };
+
+  async function api(endpoint, body, { mobile = false } = {}) {
     const cfg = await ytcfgReady();
     const headers = {
       "Content-Type": "application/json",
       "X-Goog-AuthUser": String(cfg.get("SESSION_INDEX") ?? "0"),
       "X-Origin": location.origin,
-      "X-Youtube-Client-Name": String(cfg.get("INNERTUBE_CONTEXT_CLIENT_NAME") ?? "67"),
-      "X-Youtube-Client-Version": String(cfg.get("INNERTUBE_CLIENT_VERSION") ?? ""),
+      "X-Youtube-Client-Name": mobile ? MOBILE_CLIENT.nameId : String(cfg.get("INNERTUBE_CONTEXT_CLIENT_NAME") ?? "67"),
+      "X-Youtube-Client-Version": mobile ? MOBILE_CLIENT.clientVersion : String(cfg.get("INNERTUBE_CLIENT_VERSION") ?? ""),
     };
     const visitor = cfg.get("VISITOR_DATA");
     if (visitor) headers["X-Goog-Visitor-Id"] = visitor;
@@ -221,13 +224,29 @@
       method: "POST",
       credentials: "include",
       headers,
-      body: JSON.stringify({ context: cfg.get("INNERTUBE_CONTEXT"), ...body }),
+      body: JSON.stringify({ context: mobile ? mobileContext(cfg) : cfg.get("INNERTUBE_CONTEXT"), ...body }),
     });
     if (!res.ok) throw new Error(`YouTube Music respondeu ${res.status}`);
     return res.json();
   }
 
+  function mobileContext(cfg) {
+    const ctx = JSON.parse(JSON.stringify(cfg.get("INNERTUBE_CONTEXT") ?? {}));
+    ctx.client = { ...(ctx.client ?? {}), clientName: MOBILE_CLIENT.clientName, clientVersion: MOBILE_CLIENT.clientVersion };
+    return ctx;
+  }
+
   const browse = (browseId, params) => api("browse", params ? { browseId, params } : { browseId });
+
+  /** browseId da letra (MPLY...) a partir do "next" da faixa. */
+  async function lyricsBrowseId(videoId) {
+    const next = await api("next", { videoId, isAudioOnly: true });
+    const tabs = find(next, "tabs") ?? [];
+    const ep = tabs
+      .map((t) => t.tabRenderer?.endpoint?.browseEndpoint)
+      .find((e) => pageType(e) === "MUSIC_PAGE_TYPE_TRACK_LYRICS" || e?.browseId?.startsWith("MPLY"));
+    return ep?.browseId ?? null;
+  }
 
   const nextToken = (r) =>
     find(r, "continuationCommand")?.token ?? find(r, "nextContinuationData")?.continuation;
@@ -380,14 +399,25 @@
       };
     },
 
+    /** Letra com tempo do próprio YT Music (mesma faixa que está tocando). */
+    async timedLyrics({ videoId }) {
+      const id = await lyricsBrowseId(videoId);
+      if (!id) return null;
+      const r = await api("browse", { browseId: id }, { mobile: true });
+      const data = find(r, "timedLyricsData");
+      if (!Array.isArray(data) || !data.length) return null;
+      const lines = data
+        .map((l) => ({ t: Number(l.cueRange?.startTimeMilliseconds ?? NaN) / 1000, text: (l.lyricLine ?? "").trim() || "♪" }))
+        .filter((l) => Number.isFinite(l.t))
+        .sort((a, b) => a.t - b.t);
+      const source = text(find(r, "sourceMessage")) || text(find(r, "footer")) || "";
+      return lines.length ? { lines, source } : null;
+    },
+
     async lyrics({ videoId }) {
-      const next = await api("next", { videoId, isAudioOnly: true });
-      const tabs = find(next, "tabs") ?? [];
-      const lyricsTab = tabs
-        .map((t) => t.tabRenderer?.endpoint?.browseEndpoint)
-        .find((e) => pageType(e) === "MUSIC_PAGE_TYPE_TRACK_LYRICS" || e?.browseId?.startsWith("MPLY"));
-      if (!lyricsTab) return null;
-      const r = await browse(lyricsTab.browseId);
+      const id = await lyricsBrowseId(videoId);
+      if (!id) return null;
+      const r = await browse(id);
       const shelf = find(r, "musicDescriptionShelfRenderer");
       if (!shelf) return null;
       return { text: text(shelf.description), source: text(shelf.footer) };

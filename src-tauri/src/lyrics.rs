@@ -1,7 +1,9 @@
 //! Letras sincronizadas (LRC) via LRCLIB (https://lrclib.net), gratuita e sem chave.
 //! A busca roda no Rust (sem depender de CORS) e o resultado fica em cache na memória.
 //! Fluxo: correspondência exata (título, artista, álbum, duração) e, se falhar,
-//! pesquisa por título + artista aceitando ±3 s de diferença na duração.
+//! pesquisa por título + artista. Nos dois casos a duração da letra precisa
+//! bater com a da faixa (±2 s); senão é outra versão (ao vivo, remix...) e a
+//! letra sairia dessincronizada.
 
 use serde::Deserialize;
 use std::{collections::HashMap, sync::Mutex, time::Duration};
@@ -10,6 +12,8 @@ use tauri::{Runtime, State, Webview};
 use crate::{ISLAND_WINDOW, MAIN_WINDOW};
 
 const BASE: &str = "https://lrclib.net/api";
+/// Diferença máxima de duração entre a faixa e a letra.
+const MAX_DIFF: f64 = 2.0;
 const UA: &str = concat!(
     "YouTubeMusicDesk/",
     env!("CARGO_PKG_VERSION"),
@@ -37,6 +41,10 @@ fn agent() -> ureq::Agent {
 fn fetch(title: &str, artist: &str, album: Option<&str>, duration: Option<f64>) -> Option<String> {
     let agent = agent();
     let synced = |e: &Entry| e.synced_lyrics.clone().filter(|s| !s.trim().is_empty());
+    let same_length = |e: &Entry| match (duration, e.duration) {
+        (Some(d), Some(x)) if d > 0.0 => (d - x).abs() <= MAX_DIFF,
+        _ => true,
+    };
 
     // 1) correspondência exata
     let mut req = agent
@@ -55,7 +63,7 @@ fn fetch(title: &str, artist: &str, album: Option<&str>, duration: Option<f64>) 
             .read_to_string()
             .map(|b| serde_json::from_str::<Entry>(&b))
         {
-            if let Some(s) = e.ok().as_ref().and_then(synced) {
+            if let Some(s) = e.ok().as_ref().filter(|e| same_length(e)).and_then(synced) {
                 return Some(s);
             }
         }
@@ -69,12 +77,19 @@ fn fetch(title: &str, artist: &str, album: Option<&str>, duration: Option<f64>) 
         .call()
         .ok()?;
     let list: Vec<Entry> = serde_json::from_str(&res.body_mut().read_to_string().ok()?).ok()?;
-    list.iter()
-        .filter(|e| match (duration, e.duration) {
-            (Some(d), Some(x)) if d > 0.0 => (d - x).abs() <= 3.0,
-            _ => true,
-        })
-        .find_map(synced)
+    // Entre as compatíveis, a de duração mais próxima.
+    let mut ok: Vec<&Entry> = list
+        .iter()
+        .filter(|e| same_length(e) && synced(e).is_some())
+        .collect();
+    if let Some(d) = duration.filter(|d| *d > 0.0) {
+        ok.sort_by(|a, b| {
+            let da = (a.duration.unwrap_or(f64::MAX) - d).abs();
+            let db = (b.duration.unwrap_or(f64::MAX) - d).abs();
+            da.total_cmp(&db)
+        });
+    }
+    ok.first().and_then(|e| synced(e))
 }
 
 /// "A, B & C" -> "A". Usado como 2ª tentativa (o LRCLIB costuma indexar pelo principal).

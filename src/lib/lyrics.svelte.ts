@@ -10,6 +10,8 @@ export interface Line {
 export interface LyricSet {
   lines: Line[];
   synced: boolean;
+  /** De onde veio: "youtube" (com tempo), "lrclib" ou "aproximada". */
+  source: "youtube" | "lrclib" | "aproximada";
 }
 
 const cache = new Map<string, Promise<LyricSet | null>>();
@@ -36,21 +38,28 @@ function spread(text: string, duration: number): Line[] {
 }
 
 export function loadLyrics(s: PlayerState): Promise<LyricSet | null> {
-  // Sem duração ainda (metadados carregando) não dá para espalhar a letra: chave separada.
-  const key = s.videoId + (s.duration > 0 ? "" : ":sem-duracao");
-  if (!s.videoId) return Promise.resolve(null);
+  // Só busca com a duração conhecida: ela é usada para achar a versão certa.
+  const key = s.videoId;
+  if (!s.videoId || !(s.duration > 0)) return new Promise(() => {}); // aguarda
   let p = cache.get(key);
   if (!p) {
-    p = (async () => {
+    p = (async (): Promise<LyricSet | null> => {
+      // 1) letra com tempo do próprio YouTube Music (mesma faixa = sem erro de versão)
+      try {
+        const t = await api.timedLyrics(s.videoId);
+        if (t?.lines.length) return { lines: t.lines, synced: true, source: "youtube" };
+      } catch {}
+      // 2) LRCLIB (versão com a mesma duração)
       try {
         const lrc = await syncedLyrics(s.title, s.artist, s.album, s.duration);
         const lines = lrc ? parseLrc(lrc) : [];
-        if (lines.length) return { lines, synced: true };
+        if (lines.length) return { lines, synced: true, source: "lrclib" };
       } catch {}
+      // 3) sem tempo: distribui ao longo da música
       try {
         const l = await api.lyrics(s.videoId);
         const lines = l?.text ? spread(l.text, s.duration) : [];
-        if (lines.length) return { lines, synced: false };
+        if (lines.length) return { lines, synced: false, source: "aproximada" };
       } catch {}
       return null;
     })();
@@ -60,8 +69,10 @@ export function loadLyrics(s: PlayerState): Promise<LyricSet | null> {
   return p;
 }
 
-/** Índice da linha atual (busca binária). -1 = antes da primeira. */
-export function lineAt(lines: Line[], time: number): number {
+/** Índice da linha atual (busca binária). -1 = antes da primeira.
+ *  `offset` (s) > 0 adianta a letra; < 0 atrasa. */
+export function lineAt(lines: Line[], time: number, offset = 0): number {
+  time += offset;
   let lo = 0,
     hi = lines.length - 1,
     ans = -1;
@@ -102,15 +113,39 @@ export function translateSet(videoId: string, set: LyricSet, target = "pt"): Pro
 export const sameLanguage = (t: Translation | null | undefined, target = "pt") =>
   !!t?.source && t.source.toLowerCase().split(/[-_]/)[0] === target;
 
-// Preferência "traduzir": salva no localStorage e sincronizada entre a janela
-// principal e a ilha (mesma origem -> evento "storage").
+// Preferências: "traduzir" e ajuste de sincronia por música. Salvas no
+// localStorage e sincronizadas entre a janela principal e a ilha (evento "storage").
 const KEY = "ymd.lyrics.translate";
+const OFFSETS_KEY = "ymd.lyrics.offsets";
+const readOffsets = (): Record<string, number> => {
+  try {
+    return JSON.parse(localStorage.getItem(OFFSETS_KEY) ?? "{}");
+  } catch {
+    return {};
+  }
+};
 class LyricsPrefs {
   translate = $state(localStorage.getItem(KEY) === "1");
+  offsets = $state<Record<string, number>>(readOffsets());
   constructor() {
     window.addEventListener("storage", (e) => {
       if (e.key === KEY) this.translate = e.newValue === "1";
+      if (e.key === OFFSETS_KEY) this.offsets = readOffsets();
     });
+  }
+  offset(videoId: string) {
+    return this.offsets[videoId] ?? 0;
+  }
+  /** Ajusta a sincronia desta música (passos de 0,5 s; 0 remove). */
+  nudge(videoId: string, delta: number | null) {
+    const next = { ...this.offsets };
+    const v = delta === null ? 0 : Math.round(((next[videoId] ?? 0) + delta) * 10) / 10;
+    if (v === 0) delete next[videoId];
+    else next[videoId] = Math.max(-30, Math.min(30, v));
+    const keys = Object.keys(next);
+    if (keys.length > 300) delete next[keys[0]];
+    this.offsets = next;
+    localStorage.setItem(OFFSETS_KEY, JSON.stringify(next));
   }
   toggleTranslate() {
     this.translate = !this.translate;

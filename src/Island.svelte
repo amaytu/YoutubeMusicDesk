@@ -29,7 +29,7 @@
 
   const s = $derived(player.state);
   let lyrics = $state<LyricSet | null>(null);
-  const idx = $derived(lyrics ? lineAt(lyrics.lines, player.time) : -1);
+  const idx = $derived(lyrics ? lineAt(lyrics.lines, player.time, lyricsPrefs.offset(player.state.videoId)) : -1);
   const line = $derived(lyrics && idx >= 0 ? lyrics.lines[idx].text : "");
   const nextLine = $derived(lyrics && idx + 1 < lyrics.lines.length ? lyrics.lines[idx + 1].text : "");
   /** Tradução da linha atual (se "Traduzir" estiver ligado e a letra não for PT). */
