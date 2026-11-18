@@ -4,6 +4,7 @@
   import { fade, scale } from "svelte/transition";
   import { player } from "../lib/player.svelte";
   import Icon from "./Icon.svelte";
+  import Logo from "./Logo.svelte";
 
   const KEY = "ymd.welcome.dismissedAt";
   const DAYS = 7;
@@ -25,9 +26,7 @@
 {#if show}
   <div class="overlay" transition:fade={{ duration: 200 }}>
     <div class="card glass" in:scale={{ start: 0.9, duration: 420, easing: backOut }}>
-      <div class="logo">
-        <span></span><span></span><span></span><span></span><span></span>
-      </div>
+      <div class="logo"><Logo size={104} /></div>
       <h1>Bem-vindo ao YouTube Music Desk</h1>
       <p>Entre com sua conta Google para ver suas playlists, curtidas e recomendações. É só uma vez — depois o app já abre conectado.</p>
       <button class="btn primary big" onclick={login}>
@@ -64,30 +63,14 @@
     z-index: 2;
   }
   .logo {
-    width: 72px;
-    height: 72px;
-    border-radius: 18px;
-    background: linear-gradient(160deg, #7c3aed, #ec4899);
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    gap: 4px;
-    padding-bottom: 16px;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
+    filter: drop-shadow(0 14px 30px rgba(124, 92, 255, 0.45));
+    animation: float 3.2s ease-in-out infinite;
   }
-  .logo span {
-    width: 7px;
-    border-radius: 4px;
-    background: #fff;
-    animation: eq 1.2s ease-in-out infinite;
-  }
-  .logo span:nth-child(1) { height: 16px; animation-delay: -0.2s; }
-  .logo span:nth-child(2) { height: 30px; animation-delay: -0.5s; }
-  .logo span:nth-child(3) { height: 24px; animation-delay: -0.8s; }
-  .logo span:nth-child(4) { height: 36px; animation-delay: -0.1s; }
-  .logo span:nth-child(5) { height: 20px; animation-delay: -0.6s; }
-  @keyframes eq {
-    50% { transform: scaleY(0.55); }
+  @keyframes float {
+    50% {
+      transform: translateY(-6px) rotate(-2deg);
+    }
   }
   h1 {
     margin: 0;

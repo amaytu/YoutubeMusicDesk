@@ -10,6 +10,7 @@
   import { router } from "../lib/router.svelte";
   import type { Track } from "../lib/types";
   import { artistsText, fmtTime, thumb } from "../lib/util";
+  import { Crossfade } from "../lib/crossfade.svelte";
   import Cover from "./Cover.svelte";
   import Icon from "./Icon.svelte";
   import LyricsPanel from "./LyricsPanel.svelte";
@@ -66,16 +67,8 @@
   }
 
   // Fundo: capa em alta resolução com crossfade ao trocar de faixa.
-  let layers = $state<{ id: number; url: string }[]>([]);
-  let n = 0;
-  $effect(() => {
-    const url = thumb(s.thumb, 1200);
-    if (!url || layers.at(-1)?.url === url) return;
-    const id = ++n;
-    layers = [...layers.slice(-1), { id, url }];
-    const t = setTimeout(() => (layers = layers.filter((l) => l.id >= id)), 1000);
-    return () => clearTimeout(t);
-  });
+  const bg = new Crossfade();
+  $effect(() => bg.set(thumb(s.thumb, 1200)));
 
   function close() {
     player.openNow(null);
@@ -94,8 +87,8 @@
 
 <div class="now">
   <div class="backdrop" aria-hidden="true">
-    {#each layers as l (l.id)}
-      <img src={l.url} alt="" decoding="async" onload={(e) => e.currentTarget.classList.add("in")} />
+    {#each bg.layers as l (l.id)}
+      <img src={l.url} alt="" decoding="async" class:in={l.id === bg.shown} onload={() => bg.loaded(l.id)} />
     {/each}
     <div class="shade"></div>
   </div>
@@ -247,7 +240,7 @@
     filter: blur(3px) saturate(1.1);
     transition: opacity 0.9s ease;
   }
-  .backdrop img:global(.in) {
+  .backdrop img.in {
     opacity: 0.6;
   }
   .shade {

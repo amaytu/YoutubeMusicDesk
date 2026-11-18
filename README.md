@@ -1,3 +1,5 @@
+<img src="docs/logo.png" width="120" align="right">
+
 # YouTube Music Desk
 
 Cliente desktop leve para o **YouTube Music** no Windows, feito em **Rust + Tauri v2**.

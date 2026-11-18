@@ -1,26 +1,18 @@
 <script lang="ts">
   // Fundo "acrílico" a partir da capa atual. Usa uma miniatura pequena (barata de
   // decodificar) ampliada com blur; troca com crossfade quando a faixa muda.
+  import { Crossfade } from "../lib/crossfade.svelte";
   import { thumb } from "../lib/util";
 
   let { src, strength = 1 }: { src?: string; strength?: number } = $props();
 
-  let layers = $state<{ id: number; url: string }[]>([]);
-  let n = 0;
-
-  $effect(() => {
-    const url = thumb(src, 120);
-    if (!url || layers.at(-1)?.url === url) return;
-    const id = ++n;
-    layers = [...layers.slice(-1), { id, url }];
-    const t = setTimeout(() => (layers = layers.filter((l) => l.id >= id)), 900);
-    return () => clearTimeout(t);
-  });
+  const bg = new Crossfade();
+  $effect(() => bg.set(thumb(src, 120)));
 </script>
 
 <div class="bg" style:--strength={strength} aria-hidden="true">
-  {#each layers as l (l.id)}
-    <img src={l.url} alt="" decoding="async" onload={(e) => e.currentTarget.classList.add("in")} />
+  {#each bg.layers as l (l.id)}
+    <img src={l.url} alt="" decoding="async" class:in={l.id === bg.shown} onload={() => bg.loaded(l.id)} />
   {/each}
   <div class="shade"></div>
 </div>
@@ -44,7 +36,7 @@
     opacity: 0;
     transition: opacity 0.8s ease;
   }
-  img:global(.in) {
+  img.in {
     opacity: 1;
   }
   .shade {
