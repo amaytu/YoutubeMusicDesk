@@ -8,6 +8,9 @@ fn main() {
             "sign_out",
             "bridge_reply",
             "bridge_event",
+            "island_hitbox",
+            "show_main",
+            "synced_lyrics",
         ]),
     ))
     .expect("falha no tauri-build");

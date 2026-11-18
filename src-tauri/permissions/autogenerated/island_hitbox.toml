@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-island-hitbox"
+description = "Enables the island_hitbox command without any pre-configured scope."
+commands.allow = ["island_hitbox"]
+
+[[permission]]
+identifier = "deny-island-hitbox"
+description = "Denies the island_hitbox command without any pre-configured scope."
+commands.deny = ["island_hitbox"]

@@ -2,7 +2,9 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "main",
   "description": "Interface própria: controles da janela, eventos e comandos da UI.",
-  "windows": ["main"],
+  "windows": [
+    "main"
+  ],
   "permissions": [
     "core:default",
     "core:window:allow-minimize",
@@ -13,6 +15,7 @@
     "allow-ytm",
     "allow-player-cmd",
     "allow-show-login",
-    "allow-sign-out"
+    "allow-sign-out",
+    "allow-synced-lyrics"
   ]
 }

@@ -21,6 +21,8 @@ pub struct Settings {
     pub login_ua_switch: bool,
     /// User agent usado nas páginas de login (padrão: Firefox no Windows).
     pub login_user_agent: Option<String>,
+    /// Ilha dinâmica no topo da tela quando o app está em segundo plano.
+    pub island_enabled: bool,
 }
 
 impl Default for Settings {
@@ -33,6 +35,7 @@ impl Default for Settings {
             extra_browser_args: None,
             login_ua_switch: true,
             login_user_agent: None,
+            island_enabled: true,
         }
     }
 }

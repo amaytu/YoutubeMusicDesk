@@ -207,3 +207,14 @@ export function logout() {
   signedIn = false;
   for (const l of listeners) l({ kind: "auth", data: { signedIn, changed: true } });
 }
+
+/** LRC de demonstração: uma linha a cada 4 s. */
+export async function lrc(_title: string): Promise<string | null> {
+  const lines = ["Acendo as luzes da cidade", "E o céu se apaga devagar", "Todo eco da saudade", "Volta pra me encontrar", "", "Corre, corre, horizonte", "Leva o que eu não sei dizer", "Se a noite for ponte", "Atravesso até você"];
+  const out: string[] = [];
+  for (let i = 0; i < 40; i++) {
+    const t = 2 + i * 4;
+    out.push(`[${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}.00]${lines[i % lines.length]}`);
+  }
+  return wait(out.join("\n"), 120);
+}

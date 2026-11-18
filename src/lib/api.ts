@@ -76,6 +76,22 @@ export async function signOut() {
   return invoke("sign_out");
 }
 
+/** Letra sincronizada (formato LRC) via LRCLIB, buscada pelo Rust. */
+export async function syncedLyrics(title: string, artist: string, album: string, duration: number): Promise<string | null> {
+  if (!IS_TAURI) return (await mock()).lrc(title);
+  return invoke<string | null>("synced_lyrics", { title, artist, album: album || null, duration: duration || null });
+}
+
+/** Ilha: informa a área clicável da pílula (px relativos à janela). */
+export async function islandHitbox(r: { x: number; y: number; w: number; h: number }) {
+  if (IS_TAURI) return invoke("island_hitbox", r);
+}
+
+/** Ilha: traz a janela principal de volta. */
+export async function showMain() {
+  if (IS_TAURI) return invoke("show_main");
+}
+
 export const win = {
   async minimize() {
     if (IS_TAURI) (await import("@tauri-apps/api/window")).getCurrentWindow().minimize();

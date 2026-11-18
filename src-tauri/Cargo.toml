@@ -1,6 +1,6 @@
 [package]
 name = "youtube-music-desk"
-version = "0.2.0"
+version = "0.3.0"
 description = "Cliente desktop leve para o YouTube Music (Tauri + WebView2)"
 authors = ["amaytu"]
 license = "MIT"
@@ -24,11 +24,12 @@ tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1", features = ["sync", "time"] }
+ureq = { version = "3", default-features = false, features = ["rustls", "gzip"] }
 
 [target.'cfg(windows)'.dependencies]
 # Mesmas versões usadas internamente pelo tauri/wry (evita duplicar crates).
 webview2-com = "0.39"
-windows = { version = "0.62", features = ["Win32_Foundation", "Win32_System_Threading"] }
+windows = { version = "0.62", features = ["Win32_Foundation", "Win32_System_Threading", "Win32_UI_WindowsAndMessaging", "Win32_UI_Shell"] }
 
 # Binário pequeno e rápido: o host Rust fica em poucos MB de RAM.
 [profile.release]

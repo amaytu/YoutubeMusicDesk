@@ -10,7 +10,7 @@ use tauri::{
 use tauri_plugin_opener::OpenerExt;
 
 use crate::{
-    bridge::Bridge, login, power, settings, settings::Settings, MAIN_WINDOW, PLAYER_WINDOW,
+    bridge::Bridge, island, login, power, settings, settings::Settings, MAIN_WINDOW, PLAYER_WINDOW,
 };
 
 pub const HOME: &str = "https://music.youtube.com/";
@@ -30,7 +30,7 @@ const DISABLED_FEATURES: &[&str] = &[
 
 /// As duas janelas compartilham o mesmo processo do navegador, então usam
 /// exatamente os mesmos argumentos.
-fn browser_args(s: &Settings) -> String {
+pub fn browser_args(s: &Settings) -> String {
     let mut features = DISABLED_FEATURES.to_vec();
     if s.media_keys {
         // Evita play/pause duplo: o app trata as teclas de mídia, não o Chromium.
@@ -93,8 +93,11 @@ pub fn create_main<R: Runtime>(
     let window = builder.build()?;
     if visible {
         show_window(&window);
-    } else if s.economy_when_hidden {
-        power::set_background(app, true);
+    } else {
+        island::set_background(app, true);
+        if s.economy_when_hidden {
+            power::set_background(app, true);
+        }
     }
     Ok(())
 }
@@ -188,6 +191,7 @@ fn show_window<R: Runtime>(w: &WebviewWindow<R>) {
     let _ = w.unminimize();
     let _ = w.set_focus();
     power::set_background(w.app_handle(), false);
+    island::set_background(w.app_handle(), false);
 }
 
 pub fn show<R: Runtime>(app: &AppHandle<R>) {
@@ -199,6 +203,7 @@ pub fn show<R: Runtime>(app: &AppHandle<R>) {
 pub fn hide<R: Runtime>(app: &AppHandle<R>) {
     if let Some(w) = app.get_webview_window(MAIN_WINDOW) {
         let _ = w.hide();
+        island::set_background(app, true);
         if settings::get(app).economy_when_hidden {
             power::set_background(app, true);
         }
@@ -220,13 +225,17 @@ pub fn toggle<R: Runtime>(app: &AppHandle<R>) {
 /// Chamado em `Resized`: minimizar também ativa o modo economia.
 pub fn on_resized<R: Runtime>(w: &WebviewWindow<R>) {
     let app = w.app_handle();
-    if !settings::get(app).economy_when_hidden {
-        return;
-    }
+    let economy = settings::get(app).economy_when_hidden;
     if w.is_minimized().unwrap_or(false) {
-        power::set_background(app, true);
+        island::set_background(app, true);
+        if economy {
+            power::set_background(app, true);
+        }
     } else if w.is_visible().unwrap_or(false) {
-        power::set_background(app, false);
+        island::set_background(app, false);
+        if economy {
+            power::set_background(app, false);
+        }
     }
 }
 

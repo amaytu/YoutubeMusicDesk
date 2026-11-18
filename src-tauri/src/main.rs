@@ -2,7 +2,9 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod bridge;
+mod island;
 mod login;
+mod lyrics;
 mod media;
 mod power;
 mod settings;
@@ -18,6 +20,8 @@ use tauri_plugin_window_state::StateFlags;
 pub const MAIN_WINDOW: &str = "main";
 /// music.youtube.com oculto: toca o áudio e fornece os dados.
 pub const PLAYER_WINDOW: &str = "player";
+/// Ilha dinâmica (sobreposição no topo da tela).
+pub const ISLAND_WINDOW: &str = "island";
 const START_MINIMIZED_ARG: &str = "--minimized";
 
 fn main() {
@@ -30,7 +34,7 @@ fn main() {
             tauri_plugin_window_state::Builder::new()
                 // Visibilidade é controlada por nós (tray / --minimized).
                 .with_state_flags(StateFlags::all() & !StateFlags::VISIBLE)
-                .with_denylist(&[PLAYER_WINDOW])
+                .with_denylist(&[PLAYER_WINDOW, ISLAND_WINDOW])
                 .build(),
         )
         .plugin(tauri_plugin_opener::init())
@@ -40,6 +44,8 @@ fn main() {
         ))
         .plugin(media::plugin())
         .manage(bridge::Bridge::default())
+        .manage(island::Island::default())
+        .manage(lyrics::LyricsCache::default())
         .invoke_handler(tauri::generate_handler![
             bridge::ytm,
             bridge::player_cmd,
@@ -47,6 +53,9 @@ fn main() {
             bridge::sign_out,
             bridge::bridge_reply,
             bridge::bridge_event,
+            island::island_hitbox,
+            island::show_main,
+            lyrics::synced_lyrics,
         ])
         .setup(|app| {
             let handle = app.handle();
@@ -55,6 +64,7 @@ fn main() {
 
             let start_hidden = std::env::args().any(|a| a == START_MINIMIZED_ARG);
             window::create_player(handle, &s)?;
+            island::create(handle, &window::browser_args(&s))?;
             window::create_main(handle, &s, !start_hidden)?;
             tray::create(handle)?;
             media::set_enabled(handle, s.media_keys);

@@ -19,7 +19,7 @@ use std::{
 use tauri::{AppHandle, Emitter, Manager, Runtime, Webview};
 use tokio::sync::{oneshot, Notify};
 
-use crate::{tray, window, MAIN_WINDOW, PLAYER_WINDOW};
+use crate::{island, tray, window, ISLAND_WINDOW, MAIN_WINDOW, PLAYER_WINDOW};
 
 const CALL_TIMEOUT: Duration = Duration::from_secs(45);
 const READY_TIMEOUT: Duration = Duration::from_secs(25);
@@ -102,11 +102,18 @@ pub fn cmd<R: Runtime>(app: &AppHandle<R>, name: &str, arg: Value) {
     }
 }
 
-fn require(webview: &Webview<impl Runtime>, label: &str) -> Result<(), String> {
-    if webview.label() == label {
+fn require(webview: &Webview<impl Runtime>, labels: &[&str]) -> Result<(), String> {
+    if labels.contains(&webview.label()) {
         Ok(())
     } else {
         Err("não permitido".into())
+    }
+}
+
+/// UI principal e ilha recebem os mesmos eventos do player.
+fn emit_ui<R: Runtime>(app: &AppHandle<R>, payload: Value) {
+    for label in [MAIN_WINDOW, ISLAND_WINDOW] {
+        let _ = app.emit_to(label, "ytm", payload.clone());
     }
 }
 
@@ -119,7 +126,7 @@ pub async fn ytm<R: Runtime>(
     method: String,
     args: Option<Value>,
 ) -> Reply {
-    require(&webview, MAIN_WINDOW)?;
+    require(&webview, &[MAIN_WINDOW, ISLAND_WINDOW])?;
     call(&app, &method, args.unwrap_or(Value::Null)).await
 }
 
@@ -130,21 +137,21 @@ pub fn player_cmd<R: Runtime>(
     name: String,
     arg: Option<Value>,
 ) -> Result<(), String> {
-    require(&webview, MAIN_WINDOW)?;
+    require(&webview, &[MAIN_WINDOW, ISLAND_WINDOW])?;
     cmd(&app, &name, arg.unwrap_or(Value::Null));
     Ok(())
 }
 
 #[tauri::command]
 pub fn show_login<R: Runtime>(app: AppHandle<R>, webview: Webview<R>) -> Result<(), String> {
-    require(&webview, MAIN_WINDOW)?;
+    require(&webview, &[MAIN_WINDOW])?;
     crate::login::start(&app);
     Ok(())
 }
 
 #[tauri::command]
 pub fn sign_out<R: Runtime>(app: AppHandle<R>, webview: Webview<R>) -> Result<(), String> {
-    require(&webview, MAIN_WINDOW)?;
+    require(&webview, &[MAIN_WINDOW])?;
     crate::login::sign_out(&app);
     Ok(())
 }
@@ -159,7 +166,7 @@ pub fn bridge_reply<R: Runtime>(
     ok: bool,
     data: Value,
 ) -> Result<(), String> {
-    require(&webview, PLAYER_WINDOW)?;
+    require(&webview, &[PLAYER_WINDOW])?;
     let bridge = app.state::<Bridge>();
     if let Some(tx) = bridge.pending.lock().unwrap().remove(&id) {
         let reply = if ok {
@@ -179,7 +186,7 @@ pub fn bridge_event<R: Runtime>(
     kind: String,
     data: Value,
 ) -> Result<(), String> {
-    require(&webview, PLAYER_WINDOW)?;
+    require(&webview, &[PLAYER_WINDOW])?;
     let bridge = app.state::<Bridge>();
     match kind.as_str() {
         "ready" => {
@@ -199,15 +206,19 @@ pub fn bridge_event<R: Runtime>(
                     }
                 }
             }
-            let _ = app.emit_to(
-                MAIN_WINDOW,
-                "ytm",
+            emit_ui(
+                &app,
                 json!({ "kind": "auth", "data": { "signedIn": signed_in, "changed": was != signed_in } }),
             );
         }
         "state" => {
             tray::set_track(&app, &data);
-            let _ = app.emit_to(MAIN_WINDOW, "ytm", json!({ "kind": "state", "data": data }));
+            let has_track = data
+                .get("videoId")
+                .and_then(Value::as_str)
+                .is_some_and(|v| !v.is_empty());
+            island::set_has_track(&app, has_track);
+            emit_ui(&app, json!({ "kind": "state", "data": data }));
         }
         _ => {}
     }

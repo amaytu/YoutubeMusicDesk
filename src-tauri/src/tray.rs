@@ -52,6 +52,14 @@ pub fn create<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
         s.media_keys,
         None::<&str>,
     )?;
+    let island = CheckMenuItem::with_id(
+        app,
+        "island",
+        "Ilha dinâmica em segundo plano",
+        true,
+        s.island_enabled,
+        None::<&str>,
+    )?;
     let reload = MenuItem::with_id(app, "reload", "Recarregar", true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "Sair", true, None::<&str>)?;
     let sign_in = MenuItem::with_id(
@@ -77,6 +85,7 @@ pub fn create<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
             &economy,
             &close_tray,
             &keys,
+            &island,
             &sep()?,
             &sign_in,
             &sign_out,
@@ -120,6 +129,11 @@ pub fn create<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
             "close_to_tray" => {
                 let s = settings::update(app, |s| s.close_to_tray = !s.close_to_tray);
                 let _ = close_tray.set_checked(s.close_to_tray);
+            }
+            "island" => {
+                let s = settings::update(app, |s| s.island_enabled = !s.island_enabled);
+                let _ = island.set_checked(s.island_enabled);
+                crate::island::sync(app);
             }
             "media_keys" => {
                 let s = settings::update(app, |s| s.media_keys = !s.media_keys);

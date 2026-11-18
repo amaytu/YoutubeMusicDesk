@@ -83,6 +83,29 @@ Atalhos: `Espaço` tocar/pausar · `Ctrl+←/→` anterior/próxima · `Ctrl+F` 
 - Modo economia em segundo plano (memória baixa do WebView2 + EcoQoS), bandeja,
   teclas de mídia globais, instância única e iniciar com o Windows.
 
+## Ilha dinâmica
+
+Quando o app vai para a bandeja ou é minimizado, uma pílula aparece no topo da tela:
+
+- **Compacta**: capa girando + a **letra passando** em sincronia com a música
+  (ou título — artista quando não há letra).
+- **Mouse por cima**: abre com título, artista, linha atual/próxima da letra,
+  anterior / tocar-pausar / próxima e progresso. Clique na capa para voltar ao app.
+- **Botão direito**: recolhe num traço discreto no topo; **clique** nele para voltar.
+- Não rouba o foco, não bloqueia cliques fora da pílula e some sozinha em jogos,
+  vídeos e apresentações em tela cheia.
+- Letras sincronizadas vêm do [LRCLIB](https://lrclib.net) (título/artista da faixa são
+  enviados para lá); sem resultado, usa a letra do YouTube Music distribuída ao longo da música.
+- Liga/desliga em **Bandeja → Ilha dinâmica em segundo plano**.
+
+<img src="docs/island-compact.png" width="360"> <img src="docs/island-open.png" width="360">
+
+## Download
+
+Baixe o instalador em [Releases](https://github.com/amaytu/YoutubeMusicDesk/releases/latest)
+(`*_x64-setup.exe`). Ainda não é assinado: se o SmartScreen avisar, use
+**Mais informações → Executar assim mesmo**.
+
 ## Login com o Google
 
 Pensado para ser feito uma vez só, em poucos cliques:
@@ -115,7 +138,8 @@ As opções do menu da bandeja são salvas em
   "user_agent": null,
   "extra_browser_args": null,
   "login_ua_switch": true,
-  "login_user_agent": null
+  "login_user_agent": null,
+  "island_enabled": true
 }
 ```
 
@@ -148,6 +172,7 @@ publica um release ao criar uma tag `v*`.
 ```
 src/                       interface (Svelte 5)
   App.svelte               layout: barra superior, conteúdo, player, tocando agora
+  Island.svelte            ilha dinâmica (mesmo bundle, rota #island)
   views/                   Home, Search, Songs, Albums, Artists, Playlists, Artist, Collection
   components/              PlayerBar, NowPlaying, TitleBar, Card, Shelf, TrackList...
   lib/api.ts               chamadas ao Rust (ou mock.ts no navegador) + cache
@@ -157,6 +182,8 @@ src-tauri/
   src/bridge.rs            ponte UI <-> página (chamadas com id, eventos)
   src/window.rs            janelas main/player, flags do WebView2
   src/login.rs             login do Google (UA só no login)
+  src/island.rs            ilha dinâmica (janela transparente, área clicável, tela cheia)
+  src/lyrics.rs            letras sincronizadas via LRCLIB
   src/tray.rs, media.rs, power.rs, settings.rs
   capabilities/            ACL: o que cada janela pode chamar
 ```
