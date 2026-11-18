@@ -53,7 +53,14 @@ que embute um Chromium inteiro por app.
 - **Biblioteca**: Músicas (lista com filtro/ordenação), Álbuns e Playlists (grade +
   painel lateral de faixas), Artistas.
 - **Artista**: discografia | faixas do álbum selecionado | artistas semelhantes e info.
-- **Tocando agora**: capa grande sobre fundo desfocado, com **Fila** e **Letra**.
+- **Tocando agora**: capa em tela cheia ao fundo, controles na metade esquerda e painel
+  com **Fila**, **A seguir** (filtros Tudo / Conhecido / Descobrir do mix automático) e **Letra**.
+  Abre sempre com a fila.
+- **Responsivo**: a janela pode ficar do tamanho de um celular (mín. 360×560) — abas vão
+  para uma barra inferior e o player vira um mini player.
+- Prateleiras do Início podem ser **arrastadas com o mouse** para os lados (com inércia).
+
+<img src="docs/mobile.png" width="900">
 
 Atalhos: `Espaço` tocar/pausar · `Ctrl+←/→` anterior/próxima · `Ctrl+F` ou `/` busca ·
 `Alt+←` voltar · `Esc` fecha o "tocando agora".

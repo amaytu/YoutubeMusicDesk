@@ -5,8 +5,8 @@
   // painel compacto no canto superior direito.
   import { backOut } from "svelte/easing";
   import { fly } from "svelte/transition";
-  import { api } from "../lib/api";
-  import { player } from "../lib/player.svelte";
+  import { api, playerCmd } from "../lib/api";
+  import { player, type NowTab } from "../lib/player.svelte";
   import { router } from "../lib/router.svelte";
   import type { Track } from "../lib/types";
   import { artistsText, fmtTime, thumb } from "../lib/util";
@@ -21,17 +21,49 @@
 
   let queue = $state<Track[] | null>(null);
   let queueEl = $state<HTMLDivElement>();
+  let chips = $state<{ index: number; label: string; selected: boolean }[]>([]);
+  let chipBusy = $state(false);
+  /** Filtros padrão quando a fila atual não é um mix automático. */
+  const DEFAULT_CHIPS = ["Tudo", "Conhecido", "Descobrir"];
 
-  // Recarrega a fila quando a faixa muda (só com a aba aberta).
-  $effect(() => {
-    s.videoId;
-    if (tab === "queue") {
-      api.queue().then((q) => {
+  /** "A seguir" = só o que vem depois da faixa atual. */
+  const upNext = $derived.by(() => {
+    if (!queue) return null;
+    const i = queue.findIndex((t) => t.selected);
+    return queue.slice(i + 1);
+  });
+
+  function loadQueue() {
+    return api
+      .queue()
+      .then((q) => {
         queue = q;
         requestAnimationFrame(() => queueEl?.querySelector(".q.sel")?.scrollIntoView({ block: "center", behavior: "smooth" }));
-      }).catch(() => (queue = []));
-    }
+      })
+      .catch(() => (queue = []));
+  }
+  function loadChips() {
+    return api.queueChips().then((c) => (chips = c)).catch(() => (chips = []));
+  }
+
+  // Recarrega fila/filtros quando a faixa muda (só com a aba aberta).
+  $effect(() => {
+    s.videoId;
+    if (tab === "queue" || tab === "upnext") loadQueue();
+    if (tab === "upnext") loadChips();
   });
+
+  /** Troca o filtro do mix (Tudo / Conhecido / Descobrir) e recarrega a fila. */
+  async function selectChip(i: number) {
+    if (chipBusy) return;
+    chipBusy = true;
+    chips = chips.map((c) => ({ ...c, selected: c.index === i }));
+    playerCmd("selectQueueChip", i);
+    await new Promise((r) => setTimeout(r, 1200));
+    await Promise.all([loadQueue(), loadChips()]);
+    setTimeout(loadQueue, 1500); // o YT Music às vezes completa a fila em duas etapas
+    chipBusy = false;
+  }
 
   // Fundo: capa em alta resolução com crossfade ao trocar de faixa.
   let layers = $state<{ id: number; url: string }[]>([]);
@@ -53,7 +85,7 @@
     close();
     router.go({ name: "artist", id: s.artistId });
   }
-  function toggleTab(t: "queue" | "lyrics") {
+  function toggleTab(t: Exclude<NowTab, "art">) {
     player.openNow(tab === t ? "art" : t);
   }
 </script>
@@ -72,12 +104,13 @@
     <button class="icon-btn" onclick={close} title="Fechar (Esc)"><Icon name="collapse" size={22} /></button>
     <h2>Tocando agora</h2>
     <nav class="tabs">
-      <button class:on={tab === "queue"} onclick={() => toggleTab("queue")}><Icon name="queue" size={16} /> Fila</button>
-      <button class:on={tab === "lyrics"} onclick={() => toggleTab("lyrics")}><Icon name="lyrics" size={16} /> Letra</button>
+      <button class:on={tab === "queue"} onclick={() => toggleTab("queue")}><Icon name="queue" size={16} /> <span>Fila</span></button>
+      <button class:on={tab === "upnext"} onclick={() => toggleTab("upnext")}><Icon name="upnext" size={16} /> <span>A seguir</span></button>
+      <button class:on={tab === "lyrics"} onclick={() => toggleTab("lyrics")}><Icon name="lyrics" size={16} /> <span>Letra</span></button>
     </nav>
   </header>
 
-  {#if tab === "queue" || tab === "lyrics"}
+  {#if tab === "queue" || tab === "upnext" || tab === "lyrics"}
     <aside class="side glass" transition:fly={{ y: -16, duration: 380, easing: backOut }}>
       {#if tab === "queue"}
         <div class="side-head">
@@ -92,6 +125,40 @@
           {:else}
             {#each queue as t (t.index)}
               <button class="q" class:sel={t.selected} onclick={() => player.playQueueItem(t)}>
+                <div class="q-text">
+                  <div class="ellipsis t">{t.title}</div>
+                  <div class="ellipsis s">{t.subtitle || artistsText(t.artists)}</div>
+                </div>
+                <span class="d">{t.duration}</span>
+              </button>
+            {/each}
+          {/if}
+        </div>
+      {:else if tab === "upnext"}
+        <div class="side-head">
+          <span class="section-title">A seguir</span>
+          <button class="hide" onclick={() => player.openNow("art")}>Ocultar</button>
+        </div>
+        <div class="chips" class:busy={chipBusy}>
+          {#if chips.length}
+            {#each chips as c (c.index)}
+              <button class="chip" class:sel={c.selected} onclick={() => selectChip(c.index)}>{c.label}</button>
+            {/each}
+          {:else}
+            {#each DEFAULT_CHIPS as label, i}
+              <button class="chip" class:sel={i === 0} disabled title="Disponível quando a fila é um mix/rádio automático">{label}</button>
+            {/each}
+          {/if}
+        </div>
+        <div class="scroll">
+          {#if !upNext}
+            {#each Array(8) as _}<div class="skeleton" style="height:44px;margin:6px 0"></div>{/each}
+          {:else if upNext.length === 0}
+            <p class="muted pad">Nada na sequência.</p>
+          {:else}
+            {#each upNext as t (t.index)}
+              <button class="q" onclick={() => player.playQueueItem(t)}>
+                <div class="q-art"><Cover src={t.thumb} size={80} /></div>
                 <div class="q-text">
                   <div class="ellipsis t">{t.title}</div>
                   <div class="ellipsis s">{t.subtitle || artistsText(t.artists)}</div>
@@ -304,6 +371,46 @@
     flex: 1;
     min-width: 0;
   }
+  .q-art {
+    width: 36px;
+    flex: none;
+  }
+  .chips {
+    display: flex;
+    gap: 6px;
+    padding: 0 14px 10px;
+    flex-wrap: wrap;
+    transition: opacity 0.2s;
+  }
+  .chips.busy {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+  .chip {
+    height: 30px;
+    padding: 0 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+    transition: background 0.2s, color 0.2s, transform 0.35s var(--spring);
+  }
+  .chip:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.16);
+    transform: translateY(-1px);
+  }
+  .chip:active:not(:disabled) {
+    transform: scale(0.95);
+  }
+  .chip.sel {
+    color: #0a0a0f;
+    background: #fff;
+  }
+  .chip:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
   .t {
     font-weight: 600;
     font-size: 13px;
@@ -434,5 +541,51 @@
     z-index: 2;
     right: 18px;
     bottom: 18px;
+  }
+  @media (max-width: 860px) {
+    .tabs span {
+      display: none;
+    }
+    .half {
+      width: 100%;
+    }
+    .side {
+      left: 14px;
+      right: 14px;
+      width: auto;
+      bottom: 236px;
+    }
+    .corner {
+      display: none;
+    }
+  }
+  @media (max-width: 700px) {
+    h2 {
+      font-size: 18px;
+    }
+    .top {
+      padding: 12px 12px 0 8px;
+    }
+    .bottom {
+      left: 14px;
+      right: 14px;
+      bottom: 12px;
+    }
+    .hero {
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .art {
+      width: 76px;
+    }
+    .side {
+      top: 56px;
+      left: 10px;
+      right: 10px;
+      bottom: 210px;
+    }
+    .volume {
+      display: none;
+    }
   }
 </style>

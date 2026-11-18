@@ -32,14 +32,27 @@
   --radius-xl: 28px;
   --titlebar: 60px;
   --playerbar: 76px;
+  --bottomnav: 58px;
   /* espaço reservado no fim das listas para o player flutuante */
   --player-space: calc(var(--playerbar) + 32px);
+  /* margem lateral das páginas */
+  --gutter: 24px;
 
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   --spring: cubic-bezier(0.34, 1.45, 0.5, 1);
   --font: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
   --font-display: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
   color-scheme: dark;
+}
+
+/* Janela estreita / formato celular: mini player + navegação inferior. */
+@media (max-width: 700px) {
+  :root {
+    --titlebar: 52px;
+    --playerbar: 62px;
+    --player-space: calc(var(--playerbar) + var(--bottomnav) + 34px);
+    --gutter: 14px;
+  }
 }
 
 html.solid {

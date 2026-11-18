@@ -1,6 +1,7 @@
 <script lang="ts">
   // Prateleira horizontal com setas. Músicas viram uma grade compacta
   // (como as "escolhas rápidas" do YouTube Music).
+  import { dragScroll } from "../lib/fx.svelte";
   import { player } from "../lib/player.svelte";
   import type { Item, Shelf, Track } from "../lib/types";
   import { artistsText } from "../lib/util";
@@ -29,7 +30,7 @@
   </header>
 
   {#if songsOnly}
-    <div class="row songs" bind:this={row}>
+    <div class="row songs" bind:this={row} use:dragScroll>
       {#each shelf.items as it, i (i)}
         {@const t = asTrack(it)}
         <button class="tile" class:active={t.videoId === player.state.videoId} onclick={() => player.playTrack(t)}>
@@ -42,7 +43,7 @@
       {/each}
     </div>
   {:else}
-    <div class="row cards" class:top={shelf.top} bind:this={row}>
+    <div class="row cards" class:top={shelf.top} bind:this={row} use:dragScroll>
       {#each shelf.items as it, i (i)}
         <div class="cell"><Card item={it} /></div>
       {/each}
@@ -82,6 +83,18 @@
     display: none;
   }
   .row {
+    cursor: grab;
+  }
+  /* durante o arraste: sem snap, sem hover/inclinação nos cards */
+  .row:global(.dragging) {
+    cursor: grabbing;
+    scroll-snap-type: none;
+    scroll-behavior: auto;
+  }
+  .row:global(.dragging) :global(*) {
+    pointer-events: none;
+  }
+  .row {
     margin: 0 -8px;
     padding: 8px 8px 12px;
   }
@@ -103,6 +116,21 @@
     grid-template-rows: repeat(4, 60px);
     grid-auto-columns: minmax(300px, 30%);
     gap: 4px 12px;
+  }
+  @media (max-width: 700px) {
+    .songs {
+      grid-auto-columns: 82%;
+    }
+    .cards {
+      grid-auto-columns: 148px;
+      gap: 10px;
+    }
+    .cards.top {
+      grid-auto-columns: 180px;
+    }
+    h2 {
+      font-size: 17px;
+    }
   }
   .tile {
     display: flex;

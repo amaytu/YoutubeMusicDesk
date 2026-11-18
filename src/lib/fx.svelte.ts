@@ -95,3 +95,89 @@ class Appearance {
   }
 }
 export const appearance = new Appearance();
+
+/**
+ * Arrastar com o mouse para rolar na horizontal (com inércia ao soltar).
+ * Um arraste não dispara o clique do item embaixo do cursor.
+ */
+export function dragScroll(node: HTMLElement) {
+  let down = false;
+  let moved = false;
+  let startX = 0;
+  let startLeft = 0;
+  let lastX = 0;
+  let lastT = 0;
+  let velocity = 0;
+  let raf = 0;
+  const THRESHOLD = 6;
+
+  const onDown = (e: PointerEvent) => {
+    if (e.pointerType !== "mouse" || e.button !== 0) return;
+    cancelAnimationFrame(raf);
+    down = true;
+    moved = false;
+    startX = lastX = e.clientX;
+    startLeft = node.scrollLeft;
+    lastT = performance.now();
+    velocity = 0;
+  };
+  const onMove = (e: PointerEvent) => {
+    if (!down) return;
+    const dx = e.clientX - startX;
+    if (!moved && Math.abs(dx) < THRESHOLD) return;
+    if (!moved) {
+      moved = true;
+      node.setPointerCapture(e.pointerId);
+      node.classList.add("dragging");
+    }
+    node.scrollLeft = startLeft - dx;
+    const now = performance.now();
+    const dt = Math.max(1, now - lastT);
+    velocity = (e.clientX - lastX) / dt; // px/ms
+    lastX = e.clientX;
+    lastT = now;
+  };
+  const onUp = (e: PointerEvent) => {
+    if (!down) return;
+    down = false;
+    if (!moved) return;
+    node.releasePointerCapture?.(e.pointerId);
+    // inércia
+    let v = velocity * 16;
+    const step = () => {
+      v *= 0.94;
+      node.scrollLeft -= v;
+      if (Math.abs(v) > 0.4) raf = requestAnimationFrame(step);
+      else node.classList.remove("dragging");
+    };
+    if (reducedMotion() || Math.abs(v) < 0.4) node.classList.remove("dragging");
+    else raf = requestAnimationFrame(step);
+  };
+  // Depois de arrastar, engole o clique que o navegador dispara ao soltar.
+  const onClick = (e: MouseEvent) => {
+    if (moved) {
+      e.preventDefault();
+      e.stopPropagation();
+      moved = false;
+    }
+  };
+  const noDrag = (e: DragEvent) => e.preventDefault();
+
+  node.addEventListener("pointerdown", onDown);
+  node.addEventListener("pointermove", onMove);
+  node.addEventListener("pointerup", onUp);
+  node.addEventListener("pointercancel", onUp);
+  node.addEventListener("click", onClick, true);
+  node.addEventListener("dragstart", noDrag);
+  return {
+    destroy() {
+      cancelAnimationFrame(raf);
+      node.removeEventListener("pointerdown", onDown);
+      node.removeEventListener("pointermove", onMove);
+      node.removeEventListener("pointerup", onUp);
+      node.removeEventListener("pointercancel", onUp);
+      node.removeEventListener("click", onClick, true);
+      node.removeEventListener("dragstart", noDrag);
+    },
+  };
+}

@@ -23,6 +23,8 @@ const EMPTY: PlayerState = {
   at: 0,
 };
 
+export type NowTab = "art" | "queue" | "upnext" | "lyrics";
+
 class Player {
   state = $state<PlayerState>({ ...EMPTY });
   time = $state(0);
@@ -30,7 +32,7 @@ class Player {
   signedIn = $state<boolean | null>(null);
   /** Incrementa quando a conta muda; telas usam para recarregar. */
   authVersion = $state(0);
-  nowPlaying = $state<null | "art" | "queue" | "lyrics">(null);
+  nowPlaying = $state<null | NowTab>(null);
 
   #seeking = false;
   #timer: ReturnType<typeof setInterval> | null = null;
@@ -73,7 +75,9 @@ class Player {
   }
 
   /** Abre/fecha/troca a aba do "Tocando agora" com transição. */
-  openNow(tab: null | "art" | "queue" | "lyrics") {
+  openNow(tab: null | NowTab) {
+    // Ao abrir pela capa/barra, já mostra a fila.
+    if (this.nowPlaying === null && tab === "art") tab = "queue";
     const opening = (this.nowPlaying === null) !== (tab === null);
     if (opening) vt(() => (this.nowPlaying = tab));
     else this.nowPlaying = tab;

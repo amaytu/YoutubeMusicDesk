@@ -69,7 +69,7 @@ pub fn create_main<R: Runtime>(
         WebviewWindowBuilder::new(app, MAIN_WINDOW, WebviewUrl::App("index.html".into()))
             .title("YouTube Music Desk")
             .inner_size(1280.0, 820.0)
-            .min_inner_size(900.0, 600.0)
+            .min_inner_size(360.0, 560.0) // responsivo até o tamanho de um celular
             .decorations(false)
             .visible(false) // mostrada depois que o window-state restaurar posição/tamanho
             .background_color(tauri::window::Color(14, 14, 18, 255))

@@ -13,7 +13,10 @@
     "volume-low": "M4 9.5h3.2L12 5.5v13l-4.8-4H4zM15.5 9a4 4 0 0 1 0 6",
     mute: "M4 9.5h3.2L12 5.5v13l-4.8-4H4zM16 9.5l5 5M21 9.5l-5 5",
     queue: "M4 6h16M4 11h16M4 16h9M17 14.5v6l4.5-3z",
-    lyrics: "M12 4a3 3 0 0 1 3 3v4a3 3 0 0 1-6 0V7a3 3 0 0 1 3-3zM6 11a6 6 0 0 0 12 0M12 17v3M9 20h6",
+    // Letra: linhas de texto + nota musical (colcheia)
+    lyrics: "m:sM3 6.5h9M3 10.5h9M3 14.5h5M15.6 17.5V4.8c2.4.3 4.4 2.2 4.4 4.7|fM15.6 17.5a3 3 0 1 1-3-3 3 3 0 0 1 3 3z",
+    // A seguir: lista + seta
+    upnext: "M3 6h12M3 11h12M3 16h7M15.5 14.5l3.5 3.5-3.5 3.5M13 18h6",
     expand: "M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7",
     collapse: "M6 9l6 6 6-6",
     search: "M10.5 4a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13zM15.5 15.5 20 20",
@@ -46,6 +49,10 @@
   let { name, size = 20, class: cls = "" }: { name: string; size?: number; class?: string } = $props();
   const d = $derived(ICONS[name] ?? "");
   const filled = $derived(d.startsWith("f:"));
+  /** Ícones mistos: partes com traço (s) e preenchidas (f). */
+  const parts = $derived(
+    d.startsWith("m:") ? d.slice(2).split("|").map((p) => ({ fill: p[0] === "f", d: p.slice(1) })) : null,
+  );
 </script>
 
 <svg
@@ -55,12 +62,18 @@
   viewBox="0 0 24 24"
   aria-hidden="true"
   fill={filled ? "currentColor" : "none"}
-  stroke={filled ? "none" : "currentColor"}
+  stroke={filled || parts ? "none" : "currentColor"}
   stroke-width="1.8"
   stroke-linecap="round"
   stroke-linejoin="round"
 >
-  <path d={filled ? d.slice(2) : d} />
+  {#if parts}
+    {#each parts as p}
+      <path d={p.d} fill={p.fill ? "currentColor" : "none"} stroke={p.fill ? "none" : "currentColor"} />
+    {/each}
+  {:else}
+    <path d={filled ? d.slice(2) : d} />
+  {/if}
 </svg>
 
 <style>

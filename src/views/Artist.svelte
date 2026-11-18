@@ -10,7 +10,7 @@
   import type { Hint } from "../lib/router.svelte";
   import type { AlbumItem, ArtistPage } from "../lib/types";
   import { openItem } from "../lib/actions";
-  import { sheen } from "../lib/fx.svelte";
+  import { dragScroll, sheen } from "../lib/fx.svelte";
   import { thumb } from "../lib/util";
 
   let { id, hint }: { id: string; hint?: Hint } = $props();
@@ -63,7 +63,7 @@
       <!-- Discografia -->
       <aside class="disco">
         <div class="col-head"><span class="section-title">Discografia</span><span class="muted">{disco.length}</span></div>
-        <div class="disco-list">
+        <div class="disco-list" use:dragScroll>
           <button class="disc top sheen" use:sheen class:sel={selected === "top"} onclick={() => (selected = "top")}>
             <span class="disc-title">Mais tocadas</span>
             <span class="disc-sub">{a.songs.length} músicas</span>
@@ -91,7 +91,7 @@
             <Status title="Sem músicas" />
           {/if}
         {:else}
-          <div class="strip">
+          <div class="strip" use:dragScroll>
             {#each disco as al (al.id)}
               <button class="strip-item" class:sel={selected === al.id} onclick={() => (selected = al.id)} title={al.title}>
                 <Cover src={al.thumb} size={226} icon="album" />
@@ -321,6 +321,12 @@
     padding: 6px 4px 14px;
     scrollbar-width: none;
   }
+  .strip:global(.dragging) {
+    cursor: grabbing;
+  }
+  .strip:global(.dragging) :global(*) {
+    pointer-events: none;
+  }
   .strip-item {
     width: 76px;
     flex: none;
@@ -422,6 +428,48 @@
     }
     .side {
       display: none;
+    }
+  }
+  /* estreito: uma coluna, discografia vira carrossel e a página rola inteira */
+  @media (max-width: 860px) {
+    .page {
+      overflow-y: auto;
+      padding: 0 var(--gutter) var(--player-space);
+    }
+    .cols {
+      display: flex;
+      flex-direction: column;
+      flex: none;
+    }
+    .disco-list {
+      flex-direction: row;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding-bottom: 4px;
+    }
+    .disc {
+      width: 190px;
+    }
+    .center {
+      overflow: visible;
+    }
+    .side {
+      display: block;
+      overflow: visible;
+    }
+    .hero {
+      gap: 14px;
+      padding: 14px;
+    }
+    .avatar {
+      width: 76px;
+      height: 76px;
+    }
+    h1 {
+      font-size: 26px;
+    }
+    .actions {
+      flex-wrap: wrap;
     }
   }
 </style>

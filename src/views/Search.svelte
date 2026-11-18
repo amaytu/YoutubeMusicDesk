@@ -41,7 +41,7 @@
   .page {
     height: 100%;
     overflow-y: auto;
-    padding: 4px 24px var(--player-space);
+    padding: 4px var(--gutter) var(--player-space);
   }
   h1 {
     margin: 4px 4px 18px;
@@ -54,5 +54,10 @@
   }
   .songs {
     margin-bottom: 28px;
+  }
+  @media (max-width: 700px) {
+    h1 {
+      font-size: 20px;
+    }
   }
 </style>

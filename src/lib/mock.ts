@@ -112,6 +112,7 @@ const state: PlayerState = {
   playing: false, volume: 70, muted: false, liked: false, repeat: "NONE", at: Date.now(),
 };
 let signedIn = true;
+let chip = 0;
 
 function emit() {
   state.at = Date.now();
@@ -167,6 +168,7 @@ export async function call(method: string, args: any = {}): Promise<unknown> {
         source: "Fonte: demonstração",
       });
     case "queue": return wait(queue.map((t, i) => ({ ...t, index: i, selected: i === qi })), 80);
+    case "queueChips": return wait(["Tudo", "Conhecidas", "Descobrir"].map((label, index) => ({ index, label, selected: index === chip })), 40);
   }
   throw new Error(`mock: ${method}`);
 }
@@ -180,6 +182,12 @@ export function cmd(name: string, arg: any) {
     case "volume": state.volume = Number(arg); state.muted = state.volume === 0; break;
     case "like": state.liked = !state.liked; break;
     case "repeat": state.repeat = state.repeat === "NONE" ? "ALL" : state.repeat === "ALL" ? "ONE" : "NONE"; break;
+    case "selectQueueChip": {
+      chip = Number(arg);
+      const rest = (chip === 2 ? allTracks.slice(30, 45) : chip === 1 ? allTracks.slice(0, 12) : allTracks.slice(12, 30));
+      queue = [...queue.slice(0, qi + 1), ...rest.filter((t) => t.videoId !== queue[qi].videoId)];
+      return;
+    }
     case "playQueueItem": qi = Math.max(0, queue.findIndex((t) => t.videoId === arg.videoId)); load(queue[qi]); return;
     case "playItem": {
       const list = albums.find((a) => a.tracks[0].playlistId === arg.playlistId)?.tracks

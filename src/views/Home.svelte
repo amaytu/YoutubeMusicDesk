@@ -34,12 +34,21 @@
   .page {
     height: 100%;
     overflow-y: auto;
-    padding: 4px 24px var(--player-space);
+    padding: 4px var(--gutter) var(--player-space);
   }
   h1 {
     margin: 4px 4px 18px;
     font: 700 32px var(--font-display);
     letter-spacing: -0.02em;
+  }
+  @media (max-width: 700px) {
+    h1 {
+      font-size: 24px;
+      margin-bottom: 12px;
+    }
+    .sk-row {
+      grid-template-columns: repeat(3, 1fr);
+    }
   }
   .sk-row {
     display: grid;

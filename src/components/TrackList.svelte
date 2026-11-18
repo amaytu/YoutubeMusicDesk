@@ -3,6 +3,7 @@
   import { router } from "../lib/router.svelte";
   import type { Track } from "../lib/types";
   import Cover from "./Cover.svelte";
+  import { artistsText } from "../lib/util";
   import Icon from "./Icon.svelte";
 
   let {
@@ -75,7 +76,10 @@
           {/if}
         </button>
       </div>
-      <div class="title ellipsis">{t.title}</div>
+      <div class="title-cell">
+        <div class="title ellipsis">{t.title}</div>
+        <div class="sub-artist ellipsis">{artistsText(t.artists, t.subtitle)}</div>
+      </div>
       <div class="artist ellipsis">
         {#if t.artists?.length}
           {#each t.artists as a, j}
@@ -193,8 +197,31 @@
   .row.active .playbtn.solo {
     background: none;
   }
+  .title-cell {
+    min-width: 0;
+  }
   .title {
     font-weight: 500;
+  }
+  .sub-artist {
+    display: none;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  @media (max-width: 700px) {
+    .row,
+    .no-album .row {
+      grid-template-columns: 40px minmax(0, 1fr) 44px;
+      gap: 10px;
+      padding: 0 8px 0 4px;
+    }
+    .artist,
+    .album {
+      display: none;
+    }
+    .sub-artist {
+      display: block;
+    }
   }
   .artist,
   .album,

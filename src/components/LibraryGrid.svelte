@@ -105,7 +105,7 @@
     display: grid;
     grid-template-columns: 1fr;
     gap: 16px;
-    padding: 0 20px 0 24px;
+    padding: 0 calc(var(--gutter) - 4px) 0 var(--gutter);
   }
   .lib.with-panel {
     grid-template-columns: 1fr minmax(340px, 30%);
@@ -119,8 +119,28 @@
   .toolbar {
     display: flex;
     align-items: center;
-    gap: 12px;
+    flex-wrap: wrap;
+    gap: 10px 12px;
     padding: 8px 0 16px;
+  }
+  @media (max-width: 700px) {
+    h1 {
+      font-size: 22px;
+    }
+    .grow {
+      flex-basis: 100%;
+      height: 0;
+    }
+    .toolbar :global(.field) {
+      flex: 1;
+    }
+    .toolbar :global(.field input) {
+      width: 100%;
+    }
+    .grid {
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 10px;
+    }
   }
   h1 {
     margin: 0;

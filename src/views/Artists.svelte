@@ -50,7 +50,7 @@
     height: 100%;
     display: flex;
     flex-direction: column;
-    padding: 0 24px;
+    padding: 0 var(--gutter);
   }
   .toolbar {
     display: flex;
@@ -79,5 +79,14 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(156px, 1fr));
     gap: 14px;
+  }
+  @media (max-width: 700px) {
+    h1 {
+      font-size: 22px;
+    }
+    .grid {
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 8px;
+    }
   }
 </style>

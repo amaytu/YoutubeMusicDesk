@@ -11,7 +11,7 @@
   const s = $derived(player.state);
   const volIcon = $derived(s.muted || s.volume === 0 ? "mute" : s.volume < 50 ? "volume-low" : "volume");
 
-  function openNow(tab: "art" | "queue" | "lyrics") {
+  function openNow(tab: "art" | "queue" | "upnext" | "lyrics") {
     player.openNow(player.nowPlaying === tab ? null : tab);
   }
 
@@ -84,6 +84,16 @@
     </div>
   </div>
 
+  <!-- formato celular: progresso fino na borda e só play/próxima -->
+  <div class="mini-ctl">
+    <button class="icon-btn" class:on={s.liked} onclick={() => player.like()} title="Curtir"><Icon name={s.liked ? "heart-fill" : "heart"} size={18} /></button>
+    <button class="play small-play" onclick={() => player.toggle()} title={s.playing ? "Pausar" : "Tocar"} disabled={!player.hasTrack}>
+      <Icon name={s.playing ? "pause" : "play"} size={18} />
+    </button>
+    <button class="icon-btn" onclick={() => player.next()} title="Próxima"><Icon name="next" size={18} /></button>
+  </div>
+  <div class="mini-progress"><i style:width="{s.duration ? Math.min(100, (player.time / s.duration) * 100) : 0}%"></i></div>
+
   <div class="extras">
     <button class="icon-btn heart" class:on={s.liked} class:pop={s.liked} onclick={() => player.like()} title="Curtir">
       <Icon name={s.liked ? "heart-fill" : "heart"} size={18} />
@@ -94,7 +104,7 @@
         <Range label="Volume" value={s.muted ? 0 : s.volume} oninput={(v) => player.setVolume(v)} />
       </div>
     </div>
-    <button class="icon-btn" class:on={player.nowPlaying === "lyrics"} onclick={() => openNow("lyrics")} title="Letra">
+    <button class="icon-btn lyr" class:on={player.nowPlaying === "lyrics"} onclick={() => openNow("lyrics")} title="Letra">
       <Icon name="lyrics" size={18} />
     </button>
     <button class="icon-btn" class:on={player.nowPlaying === "queue"} onclick={() => openNow("queue")} title="Fila">
@@ -328,12 +338,73 @@
     width: 96px;
     overflow: visible;
   }
-  @media (max-width: 1000px) {
+  .mini-ctl,
+  .mini-progress {
+    display: none;
+  }
+  /* O título/artista nunca somem: só encurtam com "…" (com escala 125–150% do
+     Windows a janela "cabe" em menos px de CSS do que parece). */
+  @media (max-width: 1100px) {
     .dock {
-      grid-template-columns: minmax(150px, 1fr) minmax(260px, 2fr) auto;
+      grid-template-columns: minmax(140px, 1fr) minmax(240px, 1.6fr) auto;
+      gap: 12px;
     }
-    .info .meta {
+    .extras .volume,
+    .extras .lyr {
       display: none;
+    }
+  }
+  @media (max-width: 860px) {
+    .controls .small {
+      display: none;
+    }
+  }
+  /* celular: mini player acima da navegação inferior */
+  @media (max-width: 700px) {
+    .dock {
+      left: 10px;
+      right: 10px;
+      bottom: calc(10px + var(--bottomnav) + 8px);
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      padding: 0 8px 0 7px;
+      border-radius: 20px;
+    }
+    .art {
+      width: 46px;
+      height: 46px;
+      border-radius: 12px;
+    }
+    .center,
+    .extras {
+      display: none;
+    }
+    .mini-ctl {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+    .small-play {
+      width: 38px;
+      height: 38px;
+      margin: 0 2px;
+    }
+    .mini-progress {
+      display: block;
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 0;
+      height: 2px;
+      border-radius: 2px;
+      background: rgba(255, 255, 255, 0.12);
+      overflow: hidden;
+    }
+    .mini-progress i {
+      display: block;
+      height: 100%;
+      background: var(--accent);
+      transition: width 0.25s linear;
     }
   }
 </style>

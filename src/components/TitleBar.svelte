@@ -380,4 +380,30 @@
       padding: 0 12px;
     }
   }
+  /* celular: abas vão para a barra inferior (BottomNav) */
+  @media (max-width: 700px) {
+    .bar {
+      grid-template-columns: auto 1fr;
+      padding-left: 6px;
+    }
+    .tabs {
+      display: none;
+    }
+    .search {
+      width: auto;
+      flex: 1;
+      min-width: 0;
+      height: 34px;
+    }
+    .search:focus-within {
+      width: auto;
+    }
+    .right {
+      min-width: 0;
+      gap: 4px;
+    }
+    .win button {
+      width: 40px;
+    }
+  }
 </style>

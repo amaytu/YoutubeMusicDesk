@@ -51,6 +51,7 @@ export const api = {
   artist: (id: string) => cached<ArtistPage>("artist", { id }),
   lyrics: (videoId: string) => cached<Lyrics | null>("lyrics", { videoId }, 60 * 60_000),
   queue: () => call<Track[]>("queue"),
+  queueChips: () => call<{ index: number; label: string; selected: boolean }[]>("queueChips"),
 };
 
 /** Comandos de reprodução (sem resposta). */

@@ -411,6 +411,14 @@
       }).filter((t) => t.videoId);
     },
 
+    queueChips() {
+      return chipEls().map((el, index) => ({
+        index,
+        label: text(el.data?.text) || el.textContent.trim(),
+        selected: !!(el.data?.isSelected ?? el.hasAttribute("is-selected")) || el.classList.contains("selected"),
+      }));
+    },
+
     state() {
       return snapshot();
     },
@@ -441,6 +449,14 @@
       out.push({ el, d });
     }
     return out;
+  }
+
+  /** Chips do "A seguir" (Tudo / Conhecidas / Descobrir) da página do player. */
+  function chipEls() {
+    const page = q("ytmusic-player-page") ?? document;
+    return [...page.querySelectorAll("ytmusic-chip-cloud-chip-renderer")].filter(
+      (el) => !el.closest("[hidden]") && !el.hasAttribute("hidden"),
+    );
   }
 
   // ---------------------------------------------------------------- reprodução
@@ -520,6 +536,11 @@
     like() {
       click("ytmusic-player-bar ytmusic-like-button-renderer #button-shape-like button", "ytmusic-player-bar ytmusic-like-button-renderer .like");
       setTimeout(emitState, 300);
+    },
+    /** Filtro do "A seguir": clica no chip correspondente do YouTube Music. */
+    selectQueueChip(i) {
+      const el = chipEls()[Number(i)];
+      if (el) (q("a", el) ?? q("button", el) ?? q("#chip", el) ?? el).click();
     },
     /** Toca um item da fila sem desmontar a fila (usa o endpoint do próprio item). */
     playQueueItem({ videoId, index }) {

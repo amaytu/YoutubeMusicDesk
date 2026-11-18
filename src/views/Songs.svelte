@@ -34,7 +34,7 @@
     <h1>Músicas</h1>
     {#await data then items}<span class="count">{plural(items.length, "música", "músicas")} • {total(items)}</span>{/await}
     <span class="grow"></span>
-    <button class="btn" onclick={() => player.playPlaylistId("LM", true)}><Icon name="shuffle" size={14} /> Curtidas aleatórias</button>
+    <button class="btn" onclick={() => player.playPlaylistId("LM", true)} title="Curtidas aleatórias"><Icon name="shuffle" size={14} /> <span class="btn-label">Curtidas aleatórias</span></button>
     <label class="field">
       <Icon name="filter" size={15} />
       <input bind:value={filter} placeholder="Filtrar" spellcheck="false" />
@@ -76,7 +76,7 @@
     height: 100%;
     display: flex;
     flex-direction: column;
-    padding: 0 24px;
+    padding: 0 var(--gutter);
   }
   .toolbar {
     display: flex;
@@ -114,6 +114,30 @@
     flex: 1;
     overflow-y: auto;
     padding: 6px 0 var(--player-space);
+  }
+  .toolbar {
+    flex-wrap: wrap;
+  }
+  @media (max-width: 700px) {
+    h1 {
+      font-size: 22px;
+    }
+    .count {
+      flex-basis: 100%;
+      order: 1;
+      padding: 0;
+    }
+    .btn-label,
+    .head-row {
+      display: none;
+    }
+    .toolbar :global(.field) {
+      flex: 1;
+    }
+    .toolbar :global(.field input) {
+      width: 100%;
+      min-width: 60px;
+    }
   }
   @media (max-width: 1100px) {
     .head-row {

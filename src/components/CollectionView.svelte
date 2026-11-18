@@ -158,6 +158,20 @@
     overflow: hidden;
   }
 
+  @media (max-width: 700px) {
+    .page .head {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 14px;
+    }
+    .page .art {
+      width: min(200px, 60vw);
+    }
+    .actions {
+      flex-wrap: wrap;
+    }
+  }
+
   /* Painel lateral: capa centralizada em cima. */
   .panel .head {
     flex-direction: column;

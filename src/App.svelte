@@ -1,5 +1,6 @@
 <script lang="ts">
   import Background from "./components/Background.svelte";
+  import BottomNav from "./components/BottomNav.svelte";
   import NowPlaying from "./components/NowPlaying.svelte";
   import PlayerBar from "./components/PlayerBar.svelte";
   import TitleBar from "./components/TitleBar.svelte";
@@ -70,6 +71,7 @@
     {/key}
   </main>
   <PlayerBar />
+  <BottomNav />
   {#if player.nowPlaying}<NowPlaying />{/if}
   <Welcome />
 </div>

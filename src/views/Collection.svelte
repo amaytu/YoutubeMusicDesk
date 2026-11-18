@@ -14,6 +14,6 @@
   .page {
     height: 100%;
     overflow-y: auto;
-    padding: 12px 32px var(--player-space);
+    padding: 12px var(--gutter) var(--player-space);
   }
 </style>
