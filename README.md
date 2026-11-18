@@ -38,6 +38,25 @@ que embute um Chromium inteiro por app.
 - WebView2 enxuto: Tradutor, SmartScreen, MediaRouter (Cast), OptimizationHints e
   rede em segundo plano do navegador desativados; `--process-per-site` para menos processos.
 
+## Login com o Google
+
+Pensado para ser feito uma vez só, em poucos cliques:
+
+1. Na primeira abertura sem conta, aparece **"Entrar com Google"** — um clique leva
+   direto à tela de login do Google (sem passar pelas páginas intermediárias do YouTube).
+2. E-mail → senha (ou passkey/Windows Hello) → volta ao player já conectado.
+3. A sessão fica salva no perfil do WebView2; nas próximas aberturas já entra logado.
+
+"Agora não" esconde o convite por 7 dias. A qualquer momento, pela bandeja:
+**Entrar com Google / Trocar conta** ou **Sair da conta** (apaga cookies e dados do app).
+
+**Sobre o bloqueio do Google:** o Google recusa login em navegadores embutidos
+(WebView2 incluso) com a mensagem *"Este navegador ou app pode não ser seguro"*.
+Para contornar, o app troca o user agent **apenas nas páginas de login** e restaura
+o original ao voltar para `music.youtube.com`. Se ainda assim for recusado, aparece um
+aviso com "Tentar de novo". Dá para trocar o UA usado no login em `login_user_agent`
+ou desligar o recurso com `login_ua_switch: false`.
+
 ## Configurações
 
 As opções do menu da bandeja são salvas em
@@ -49,7 +68,9 @@ As opções do menu da bandeja são salvas em
   "economy_when_hidden": true,
   "media_keys": true,
   "user_agent": null,
-  "extra_browser_args": null
+  "extra_browser_args": null,
+  "login_ua_switch": true,
+  "login_user_agent": null
 }
 ```
 
@@ -85,10 +106,11 @@ src-tauri/
   src/main.rs      plugins, setup e eventos da janela
   src/window.rs    janela WebView2, flags do navegador, filtro de navegação
   src/tray.rs      ícone/menu da bandeja e tooltip da faixa
+  src/login.rs     login do Google (UA só no login, entrar/sair pela bandeja)
   src/media.rs     teclas de mídia globais -> comandos na página
   src/power.rs     modo economia (memória WebView2 + EcoQoS)
   src/settings.rs  configurações em JSON
-  src/inject.js    ponte mínima na página (play/pause, próxima, anterior)
+  src/inject.js    ponte na página: controles + tela "Entrar com Google"
 scripts/gen-icons.py  gera os ícones (Pillow)
 ```
 

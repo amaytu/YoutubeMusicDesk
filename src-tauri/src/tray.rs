@@ -7,7 +7,7 @@ use tauri::{
 };
 use tauri_plugin_autostart::ManagerExt;
 
-use crate::{media, settings, window};
+use crate::{login, media, settings, window};
 
 const TRAY_ID: &str = "main-tray";
 const APP_NAME: &str = "YouTube Music Desk";
@@ -54,6 +54,14 @@ pub fn create<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
     )?;
     let reload = MenuItem::with_id(app, "reload", "Recarregar", true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "Sair", true, None::<&str>)?;
+    let sign_in = MenuItem::with_id(
+        app,
+        "sign_in",
+        "Entrar com Google / Trocar conta",
+        true,
+        None::<&str>,
+    )?;
+    let sign_out = MenuItem::with_id(app, "sign_out", "Sair da conta", true, None::<&str>)?;
     let sep = || PredefinedMenuItem::separator(app);
 
     let menu = Menu::with_items(
@@ -69,6 +77,9 @@ pub fn create<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
             &economy,
             &close_tray,
             &keys,
+            &sep()?,
+            &sign_in,
+            &sign_out,
             &sep()?,
             &reload,
             &quit,
@@ -91,6 +102,8 @@ pub fn create<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
         })
         .on_menu_event(move |app, event| match event.id().as_ref() {
             "toggle" => window::toggle(app),
+            "sign_in" => login::start(app),
+            "sign_out" => login::sign_out(app),
             "playpause" => media::send(app, media::Cmd::PlayPause),
             "next" => media::send(app, media::Cmd::Next),
             "prev" => media::send(app, media::Cmd::Previous),

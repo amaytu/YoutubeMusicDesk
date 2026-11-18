@@ -17,6 +17,10 @@ pub struct Settings {
     pub user_agent: Option<String>,
     /// Argumentos extras repassados ao WebView2 (ex.: "--renderer-process-limit=1").
     pub extra_browser_args: Option<String>,
+    /// Troca o user agent só durante o login do Google (evita o bloqueio de webview).
+    pub login_ua_switch: bool,
+    /// User agent usado nas páginas de login (padrão: Firefox no Windows).
+    pub login_user_agent: Option<String>,
 }
 
 impl Default for Settings {
@@ -27,6 +31,8 @@ impl Default for Settings {
             media_keys: true,
             user_agent: None,
             extra_browser_args: None,
+            login_ua_switch: true,
+            login_user_agent: None,
         }
     }
 }

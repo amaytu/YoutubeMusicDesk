@@ -6,9 +6,9 @@ use tauri::{
 };
 use tauri_plugin_opener::OpenerExt;
 
-use crate::{power, settings, settings::Settings, tray, MAIN_WINDOW};
+use crate::{login, power, settings, settings::Settings, tray, MAIN_WINDOW};
 
-const HOME: &str = "https://music.youtube.com/";
+pub const HOME: &str = "https://music.youtube.com/";
 
 /// Recursos do WebView2 que não servem para um player de música.
 /// Os três primeiros são os padrões do wry (passar args substitui os padrões).
@@ -60,11 +60,11 @@ pub fn create<R: Runtime>(app: &AppHandle<R>, s: &Settings, visible: bool) -> ta
     .background_color(tauri::window::Color(3, 3, 3, 255))
     .initialization_script(include_str!("inject.js"))
     .on_navigation(move |url| {
-        let ok = is_allowed(url);
-        if !ok {
+        if !is_allowed(url) {
             let _ = nav_app.opener().open_url(url.as_str(), None::<&str>);
+            return false;
         }
-        ok
+        login::on_navigation(&nav_app, url)
     })
     .on_new_window(move |url, _features| {
         // Links "abrir em nova aba" vão para o navegador padrão.
