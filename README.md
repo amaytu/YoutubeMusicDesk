@@ -1,6 +1,6 @@
-<img src="docs/app-icon.png" width="110" align="right">
+<p align="center"><img src="docs/app-icon.png" width="120"></p>
 
-# YouTube Music Desk
+<h1 align="center">YouTube Music Desk</h1>
 
 
 
