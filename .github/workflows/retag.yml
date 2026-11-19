@@ -1,0 +1,47 @@
+name: retag
+
+# Uso único: aponta as tags das versões para os commits reescritos da main.
+on:
+  push:
+    branches: [main]
+    paths: [".github/workflows/retag.yml"]
+
+permissions:
+  contents: write
+
+jobs:
+  retag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Mover tags
+        run: |
+          set -e
+          while read tag sha; do
+            [ -z "$tag" ] && continue
+            git cat-file -e "$sha^{commit}"
+            git tag -f "$tag" "$sha"
+            git push -f origin "refs/tags/$tag"
+          done <<'MAP'
+          v0.3.0 b9c694e3ec5c6ae76e28c8f8b690d40179cd6189
+          v0.3.1 96a25c604da4d8d52cdc32d55f9b7ec5176cf145
+          v0.4.0 54f57fd2350d466e6092c3eceb69f66d6ba2f5c1
+          v0.4.1 489e9f07f87742f8b028eca8c992a1383c07d3e7
+          v0.5.0 6be34d0ee56e0ef77a39ad3516f3aa86b20c5da7
+          v0.5.1 1d145a720f79a9096e669fa11fd9d913bf1c4e41
+          v0.5.2 8a603ec859f27d9255f0b050a740a385c47796f6
+          v0.5.3 9573b8a77983d4b01a8697e0bde8166549ea3814
+          v0.6.0 003c3cb90e9a96421339ac50b08521b442bf4b6e
+          v0.6.1 c0f4d59f6b5b026ad1c72c3fe99220e2b8ba8800
+          v0.6.2 47c980acb204e0406318d414043b2db34d6991b2
+          v0.6.3 89ff06a23365cd0f73f29029868f46c7d85cee45
+          v0.6.4 fa1d4fb829b6ab4f27ccf0c2c79be72458eb6a3a
+          v0.7.0 15ea9174b571450b15d4d351d8b1b8bb7477ef32
+          v0.7.1 ba2767d340c445d21e74be3f1234f72edd4eda03
+          v1.0.0 03e64cb15ec7903143b0b6c5cc3fbc5c8d262f34
+          v1.0.1 981c8fd194a8dc130d50f2534ce5958998697435
+          v1.0.2 4b4aeb6e7d36d81718b7a6cb1c06a06d4689fc53
+          v1.0.3 10a6c9f34058122eb6513fb00a8a143e1b8eb1b9
+          MAP
