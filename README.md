@@ -2,8 +2,6 @@
 
 <h1 align="center">YouTube Music Desk</h1>
 
-
-
 Cliente desktop leve para o **YouTube Music** no Windows, feito com Rust + Tauri.
 Abre rápido, usa pouca memória e quase nenhuma CPU em segundo plano.
 
