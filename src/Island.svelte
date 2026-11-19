@@ -12,15 +12,19 @@
   import { IS_TAURI, islandHitbox, showMain } from "./lib/api";
   import type { Translation } from "./lib/api";
   import { lineAt, loadLyrics, lyricsPrefs, sameLanguage, translateSet, type LyricSet } from "./lib/lyrics.svelte";
+  import { palette } from "./lib/palette.svelte";
   import { player } from "./lib/player.svelte";
 
   type Mode = "compact" | "open" | "tucked";
   const WIN_W = 480; // largura da janela (igual a island.rs)
   const SIZES: Record<Mode, [number, number]> = {
-    compact: [330, 42],
+    compact: [360, 42], // altura cresce com o texto (até 3 linhas)
     open: [440, 146],
     tucked: [72, 10],
   };
+  /** Altura real da pílula compacta (medida do texto). */
+  let compactH = $state(42);
+  const sizeOf = (m: Mode): [number, number] => (m === "compact" ? [SIZES.compact[0], compactH] : SIZES[m]);
   const TUCK_KEY = "ymd.island.tucked";
 
   let mode = $state<Mode>(localStorage.getItem(TUCK_KEY) === "1" ? "tucked" : "compact");
@@ -37,9 +41,13 @@
   const trLine = $derived(
     lyricsPrefs.translate && tr && !sameLanguage(tr) && idx >= 0 && tr.lines[idx] !== line && line !== "♪" ? tr.lines[idx] : "",
   );
-  /** Texto da pílula compacta: tradução, letra atual, ou título — artista. */
-  const ticker = $derived(trLine || line || [s.title, s.artist].filter(Boolean).join(" — "));
+  /** Texto da pílula compacta: sempre a letra original (ou título — artista). */
+  const ticker = $derived(line || [s.title, s.artist].filter(Boolean).join(" — "));
   const progress = $derived(s.duration ? Math.min(100, (player.time / s.duration) * 100) : 0);
+
+  $effect(() => {
+    palette.update(player.state.thumb);
+  });
 
   // Busca a letra só quando a faixa (ou a duração dela) muda.
   const trackKey = $derived(`${player.state.videoId}:${Math.round(player.state.duration)}`);
@@ -63,11 +71,11 @@
 
   // Área clicável: cresce na hora, encolhe depois da animação.
   function report(m: Mode) {
-    const [w, h] = SIZES[m];
+    const [w, h] = sizeOf(m);
     const send = (w: number, h: number) => islandHitbox({ x: (WIN_W - w) / 2 - 2, y: 0, w: w + 4, h: h + 4 });
     clearTimeout(shrinkTimer);
-    const [cw, ch] = SIZES[mode];
-    if (w >= cw) send(w, h);
+    const [cw, ch] = sizeOf(mode);
+    if (w >= cw && h >= ch) send(w, h);
     else shrinkTimer = setTimeout(() => send(w, h), 420);
   }
   function setMode(m: Mode) {
@@ -76,7 +84,7 @@
     mode = m;
   }
   onMount(() => {
-    const [w, h] = SIZES[mode];
+    const [w, h] = sizeOf(mode);
     islandHitbox({ x: (WIN_W - w) / 2 - 2, y: 0, w: w + 4, h: h + 4 });
   });
 
@@ -104,16 +112,20 @@
     }
   }
 
-  // Letreiro: se a linha não couber, rola horizontalmente.
-  let tickerBox = $state<HTMLElement>();
-  let tickerText = $state<HTMLElement>();
-  let overflow = $state(0);
+  // A pílula compacta acompanha a altura do texto (1 a 3 linhas).
+  let tickerH = $state(20);
   $effect(() => {
-    ticker;
-    mode;
-    tick().then(() => {
-      overflow = tickerBox && tickerText ? Math.max(0, tickerText.scrollWidth - tickerBox.clientWidth) : 0;
-    });
+    const h = Math.max(42, Math.ceil(tickerH) + 22);
+    if (h === compactH) return;
+    const grow = h > compactH;
+    compactH = h;
+    if (mode === "compact") {
+      const [w] = SIZES.compact;
+      const send = () => islandHitbox({ x: (WIN_W - w) / 2 - 2, y: 0, w: w + 4, h: h + 4 });
+      clearTimeout(shrinkTimer);
+      if (grow) send();
+      else shrinkTimer = setTimeout(send, 420);
+    }
   });
 </script>
 
@@ -122,8 +134,8 @@
   <div
     class="pill {mode}"
     class:playing={s.playing}
-    style:width="{SIZES[mode][0]}px"
-    style:height="{SIZES[mode][1]}px"
+    style:width="{sizeOf(mode)[0]}px"
+    style:height="{sizeOf(mode)[1]}px"
     onpointerenter={enter}
     onpointerleave={leave}
     oncontextmenu={onContext}
@@ -133,17 +145,9 @@
     {#if mode === "compact"}
       <div class="row compact-row" in:fade={{ duration: 180, delay: 120 }}>
         <div class="mini-art"><Cover src={s.thumb} size={80} eager /></div>
-        <div class="ticker" bind:this={tickerBox}>
+        <div class="ticker" bind:clientHeight={tickerH}>
           {#key ticker}
-            <span
-              class="ticker-text"
-              class:scroll={overflow > 0}
-              style:--dist="-{overflow}px"
-              style:--dur="{4 + overflow / 30}s"
-              bind:this={tickerText}
-              in:fly={{ y: 12, duration: 380, easing: backOut }}
-              out:fly={{ y: -12, duration: 220 }}>{ticker}</span
-            >
+            <span class="ticker-text" in:fly={{ y: 10, duration: 380, easing: backOut }}>{ticker}</span>
           {/key}
         </div>
         <span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
@@ -240,6 +244,9 @@
     height: 100%;
     padding: 0 14px 0 7px;
   }
+  .pill.compact {
+    border-radius: 22px;
+  }
   .mini-art {
     width: 28px;
     flex: none;
@@ -256,28 +263,20 @@
     }
   }
   .ticker {
-    position: relative;
     flex: 1;
     min-width: 0;
-    height: 20px;
-    overflow: hidden;
-    mask-image: linear-gradient(90deg, #000 calc(100% - 16px), transparent);
+    padding: 1px 0;
   }
   .ticker-text {
-    position: absolute;
-    left: 0;
-    top: 0;
-    white-space: nowrap;
-    font: 600 13px/20px var(--font);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font: 600 13px/18px var(--font);
     letter-spacing: 0.01em;
-  }
-  .ticker-text.scroll {
-    animation: marquee var(--dur) ease-in-out 1s infinite alternate;
-  }
-  @keyframes marquee {
-    to {
-      transform: translateX(var(--dist));
-    }
+    text-align: center;
+    overflow-wrap: anywhere;
   }
 
   /* equalizador: só anima enquanto toca */
@@ -292,7 +291,7 @@
     width: 3px;
     height: 4px;
     border-radius: 2px;
-    background: var(--accent);
+    background: var(--dyn-strong);
     transition: height 0.3s;
   }
   .playing .eq i {
@@ -382,7 +381,7 @@
     text-overflow: ellipsis;
   }
   .lyric .next.tr {
-    color: var(--accent);
+    color: var(--dyn);
     font-size: 12px;
     font-weight: 600;
   }
@@ -430,7 +429,7 @@
   .bar i {
     display: block;
     height: 100%;
-    background: var(--accent);
+    background: var(--dyn-strong);
     transition: width 0.25s linear;
   }
 </style>

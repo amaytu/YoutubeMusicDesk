@@ -55,6 +55,29 @@
   }
 }
 
+/* Cor da capa (ver lib/palette.svelte.ts): registradas para animar a troca. */
+@property --dyn {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #ff8a95;
+}
+@property --dyn-strong {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #ff2d46;
+}
+@property --dyn-soft {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: rgb(255 45 70 / 0.16);
+}
+:root {
+  transition:
+    --dyn 0.9s ease,
+    --dyn-strong 0.9s ease,
+    --dyn-soft 0.9s ease;
+}
+
 html.solid {
   --glass-tint: rgba(28, 28, 36, 0.94);
   --glass-tint-2: rgba(22, 22, 30, 0.94);
@@ -174,6 +197,16 @@ img {
 html.solid .glass::after,
 html.solid .sheen::after {
   display: none;
+}
+
+/* ------------------------------------------------------------------ segurar e arrastar */
+.hold-pending {
+  transform: scale(0.97) !important;
+  transition: transform 0.25s var(--ease) !important;
+}
+html.dragging-track,
+html.dragging-track * {
+  cursor: grabbing !important;
 }
 
 /* ------------------------------------------------------------------ utilitários */

@@ -143,7 +143,8 @@
 <style>
   .bar {
     position: relative;
-    z-index: 20;
+    /* acima do "Tocando agora" (30): o menu da conta abre por cima dele */
+    z-index: 40;
     height: var(--titlebar);
     display: grid;
     grid-template-columns: 1fr auto 1fr;

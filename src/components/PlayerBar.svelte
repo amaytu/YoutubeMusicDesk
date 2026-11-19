@@ -1,6 +1,9 @@
 <script lang="ts">
   // Player flutuante em cápsula de vidro; o conteúdo rola por baixo dele.
+  import { songMenu } from "../lib/contextmenu.svelte";
+  import { holdDrag } from "../lib/dnd.svelte";
   import { sheen } from "../lib/fx.svelte";
+  import type { Track } from "../lib/types";
   import { player } from "../lib/player.svelte";
   import { router } from "../lib/router.svelte";
   import { fmtTime } from "../lib/util";
@@ -9,6 +12,12 @@
   import Range from "./Range.svelte";
 
   const s = $derived(player.state);
+  /** Música atual como Track (para arrastar/menu). */
+  const current = $derived(
+    s.videoId
+      ? ({ kind: "song", videoId: s.videoId, title: s.title, thumb: s.thumb, artists: [{ name: s.artist, id: s.artistId || undefined }] } as Track)
+      : null,
+  );
   const volIcon = $derived(s.muted || s.volume === 0 ? "mute" : s.volume < 50 ? "volume-low" : "volume");
 
   function openNow(tab: "art" | "queue" | "upnext" | "lyrics") {
@@ -25,7 +34,7 @@
 
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
 <footer class="dock glass" class:clickable={player.hasTrack} use:sheen onclick={onDockClick} title={player.hasTrack ? "Abrir Tocando agora" : ""}>
-  <div class="info">
+  <div class="info" use:holdDrag={current} use:songMenu={current}>
     <button
       class="art"
       onclick={() => openNow("art")}
@@ -286,6 +295,8 @@
     }
   }
   .progress {
+    --range: var(--dyn-strong);
+    --range-glow: var(--dyn-soft);
     display: flex;
     align-items: center;
     gap: 10px;
@@ -397,7 +408,7 @@
     .mini-progress i {
       display: block;
       height: 100%;
-      background: var(--accent);
+      background: var(--dyn-strong);
       transition: width 0.25s linear;
     }
   }

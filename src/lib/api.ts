@@ -38,6 +38,11 @@ export function clearCache() {
   cache.clear();
 }
 
+/** Esquece uma resposta em cache (ex.: playlist que acabou de mudar). */
+export function invalidate(method: string, args?: Record<string, unknown>) {
+  cache.delete(method + JSON.stringify(args ?? {}));
+}
+
 export const api = {
   auth: () => call<{ signedIn: boolean }>("auth"),
   state: () => call<import("./types").PlayerState>("state"),
@@ -53,6 +58,10 @@ export const api = {
   timedLyrics: (videoId: string) =>
     cached<{ lines: { t: number; text: string }[]; source: string } | null>("timedLyrics", { videoId }, 60 * 60_000),
   queue: () => call<Track[]>("queue"),
+  addTargets: (videoId: string) =>
+    call<{ playlistId: string; title: string; contains: boolean }[]>("addTargets", { videoId }),
+  editPlaylist: (playlistId: string, videoId: string, add: boolean) =>
+    call<boolean>("editPlaylist", { playlistId, videoId, add }),
   queueChips: () => call<{ index: number; label: string; selected: boolean }[]>("queueChips"),
 };
 
@@ -95,6 +104,12 @@ export interface Translation {
 export async function translateLines(lines: string[], target = "pt"): Promise<Translation> {
   if (!IS_TAURI) return (await mock()).translate(lines);
   return invoke<Translation>("translate_lines", { lines, target });
+}
+
+/** Cor dominante da capa [r, g, b] (calculada no Rust). */
+export async function coverColor(url: string): Promise<[number, number, number] | null> {
+  if (!IS_TAURI) return (await mock()).coverColor(url);
+  return invoke<[number, number, number] | null>("cover_color", { url });
 }
 
 /** Ilha: informa a área clicável da pílula (px relativos à janela). */

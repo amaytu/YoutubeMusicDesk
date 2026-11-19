@@ -10,13 +10,21 @@
   import { router } from "../lib/router.svelte";
   import type { Track } from "../lib/types";
   import { artistsText, fmtTime, thumb } from "../lib/util";
+  import { songMenu } from "../lib/contextmenu.svelte";
   import { Crossfade } from "../lib/crossfade.svelte";
+  import { holdDrag } from "../lib/dnd.svelte";
   import Cover from "./Cover.svelte";
   import Icon from "./Icon.svelte";
   import LyricsPanel from "./LyricsPanel.svelte";
   import Range from "./Range.svelte";
 
   const s = $derived(player.state);
+  /** Música atual como Track (para arrastar/menu). */
+  const current = $derived(
+    s.videoId
+      ? ({ kind: "song", videoId: s.videoId, title: s.title, thumb: s.thumb, artists: [{ name: s.artist, id: s.artistId || undefined }] } as Track)
+      : null,
+  );
   const tab = $derived(player.nowPlaying);
   const volIcon = $derived(s.muted || s.volume === 0 ? "mute" : s.volume < 50 ? "volume-low" : "volume");
 
@@ -118,7 +126,7 @@
             <p class="muted pad">A fila está vazia.</p>
           {:else}
             {#each queue as t (t.index)}
-              <button class="q" class:sel={t.selected} onclick={() => player.playQueueItem(t)}>
+              <button class="q" class:sel={t.selected} onclick={() => player.playQueueItem(t)} use:holdDrag={t} use:songMenu={t}>
                 <div class="q-text">
                   <div class="ellipsis t">{t.title}</div>
                   <div class="ellipsis s">{t.subtitle || artistsText(t.artists)}</div>
@@ -151,7 +159,7 @@
             <p class="muted pad">Nada na sequência.</p>
           {:else}
             {#each upNext as t (t.index)}
-              <button class="q" onclick={() => player.playQueueItem(t)}>
+              <button class="q" onclick={() => player.playQueueItem(t)} use:holdDrag={t} use:songMenu={t}>
                 <div class="q-art"><Cover src={t.thumb} size={80} /></div>
                 <div class="q-text">
                   <div class="ellipsis t">{t.title}</div>
@@ -169,7 +177,7 @@
   {/if}
 
   <footer class="bottom">
-    <div class="hero">
+    <div class="hero" use:holdDrag={current} use:songMenu={current}>
       <div class="art" class:playing={s.playing} style:view-transition-name="np-cover">
         <Cover src={s.thumb} size={400} eager />
       </div>
@@ -467,6 +475,8 @@
     width: clamp(460px, 50%, 820px);
   }
   .progress {
+    --range: var(--dyn-strong);
+    --range-glow: var(--dyn-soft);
     display: flex;
     align-items: center;
     gap: 12px;

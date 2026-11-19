@@ -12,6 +12,7 @@
     "allow-island-hitbox",
     "allow-show-main",
     "allow-synced-lyrics",
-    "allow-translate-lines"
+    "allow-translate-lines",
+    "allow-cover-color"
   ]
 }

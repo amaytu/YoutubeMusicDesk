@@ -169,6 +169,13 @@ export async function call(method: string, args: any = {}): Promise<unknown> {
       });
     case "timedLyrics": return wait(null, 60);
     case "queue": return wait(queue.map((t, i) => ({ ...t, index: i, selected: i === qi })), 80);
+    case "addTargets": return wait(playlists.map((p) => ({ playlistId: p.id.slice(2), title: p.title, contains: p.tracks.some((t) => t.videoId === args.videoId) })), 150);
+    case "editPlaylist": {
+      const p = playlists.find((x) => x.id.slice(2) === args.playlistId);
+      const t = allTracks.find((x) => x.videoId === args.videoId) ?? queue.find((x) => x.videoId === args.videoId);
+      if (p && t) p.tracks = args.add ? [...p.tracks, t] : p.tracks.filter((x) => x.videoId !== t.videoId);
+      return wait(true, 250);
+    }
     case "queueChips": return wait(["Tudo", "Conhecidas", "Em alta", "Descobrir"].map((label, index) => ({ index, label, selected: index === chip })), 40);
   }
   throw new Error(`mock: ${method}`);
@@ -220,7 +227,7 @@ export function logout() {
 
 /** LRC de demonstração: uma linha a cada 4 s. */
 export async function lrc(_title: string): Promise<string | null> {
-  const lines = ["I turn on the city lights", "And the sky slowly fades", "Every echo of longing", "Comes back to find me", "", "Run, run, horizon", "Take what I can't say", "If the night is a bridge", "I'll cross over to you"];
+  const lines = ["I remember every single word we said that night when the city lights were all we had", "And the sky slowly fades", "Every echo of longing", "Comes back to find me", "", "Run, run, horizon", "Take what I can't say", "If the night is a bridge", "I'll cross over to you"];
   const out: string[] = [];
   for (let i = 0; i < 40; i++) {
     const t = 2 + i * 4;
@@ -242,4 +249,12 @@ export async function translate(lines: string[]) {
     "I'll cross over to you": "Atravesso até você",
   };
   return wait({ lines: lines.map((l) => dict[l] ?? l), source: "en", provider: "demo" }, 300);
+}
+
+/** Cor de demonstração: primeira cor do degradê da capa gerada. */
+export async function coverColor(url: string): Promise<[number, number, number] | null> {
+  const m = decodeURIComponent(url).match(/stop-color="#([0-9a-f]{6})"/i);
+  if (!m) return null;
+  const n = parseInt(m[1], 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }

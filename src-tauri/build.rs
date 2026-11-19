@@ -12,6 +12,7 @@ fn main() {
             "show_main",
             "synced_lyrics",
             "translate_lines",
+            "cover_color",
         ]),
     ))
     .expect("falha no tauri-build");

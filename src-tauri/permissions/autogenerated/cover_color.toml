@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-cover-color"
+description = "Enables the cover_color command without any pre-configured scope."
+commands.allow = ["cover_color"]
+
+[[permission]]
+identifier = "deny-cover-color"
+description = "Denies the cover_color command without any pre-configured scope."
+commands.deny = ["cover_color"]

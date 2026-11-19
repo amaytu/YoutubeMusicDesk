@@ -472,6 +472,31 @@
       return out;
     },
 
+    /**
+     * Playlists em que o usuário pode adicionar (as dele), já dizendo se a
+     * música está em cada uma. Mesmo endpoint do "Salvar na playlist".
+     */
+    async addTargets({ videoId }) {
+      const r = await api("playlist/get_add_to_playlist", { videoIds: [videoId], excludeWatchLater: true });
+      return collect(r, "playlistAddToOptionRenderer")
+        .filter((o) => o.playlistId)
+        .map((o) => ({
+          playlistId: o.playlistId,
+          title: text(o.title),
+          contains: o.containsSelectedVideos === "ALL",
+        }));
+    },
+
+    /** Adiciona ou remove a música de uma playlist. */
+    async editPlaylist({ playlistId, videoId, add }) {
+      const action = add
+        ? { action: "ACTION_ADD_VIDEO", addedVideoId: videoId, dedupeOption: "DEDUPE_OPTION_SKIP" }
+        : { action: "ACTION_REMOVE_VIDEO_BY_VIDEO_ID", removedVideoId: videoId };
+      const r = await api("browse/edit_playlist", { playlistId, actions: [action] });
+      if (r.status && r.status !== "STATUS_SUCCEEDED") throw new Error("O YouTube Music recusou a alteração");
+      return true;
+    },
+
     state() {
       return snapshot();
     },

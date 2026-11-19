@@ -1,10 +1,14 @@
 <script lang="ts">
   import Background from "./components/Background.svelte";
   import BottomNav from "./components/BottomNav.svelte";
+  import DragLayer from "./components/DragLayer.svelte";
+  import Toast from "./components/Toast.svelte";
+  import TrackMenu from "./components/TrackMenu.svelte";
   import NowPlaying from "./components/NowPlaying.svelte";
   import PlayerBar from "./components/PlayerBar.svelte";
   import TitleBar from "./components/TitleBar.svelte";
   import Welcome from "./components/Welcome.svelte";
+  import { palette } from "./lib/palette.svelte";
   import { player } from "./lib/player.svelte";
   import { router, routeKey } from "./lib/router.svelte";
   import Albums from "./views/Albums.svelte";
@@ -17,6 +21,9 @@
   import Songs from "./views/Songs.svelte";
 
   const r = $derived(router.current);
+  $effect(() => {
+    palette.update(player.state.thumb);
+  });
 
   // Atalhos globais (fora de campos de texto).
   function onKey(e: KeyboardEvent) {
@@ -74,6 +81,9 @@
   <BottomNav />
   {#if player.nowPlaying}<NowPlaying />{/if}
   <Welcome />
+  <DragLayer />
+  <TrackMenu />
+  <Toast />
 </div>
 
 <style>

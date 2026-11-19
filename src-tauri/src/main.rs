@@ -6,6 +6,7 @@ mod island;
 mod login;
 mod lyrics;
 mod media;
+mod palette;
 mod power;
 mod settings;
 mod translate;
@@ -48,6 +49,7 @@ fn main() {
         .manage(island::Island::default())
         .manage(lyrics::LyricsCache::default())
         .manage(translate::TranslateCache::default())
+        .manage(palette::PaletteCache::default())
         .invoke_handler(tauri::generate_handler![
             bridge::ytm,
             bridge::player_cmd,
@@ -59,6 +61,7 @@ fn main() {
             island::show_main,
             lyrics::synced_lyrics,
             translate::translate_lines,
+            palette::cover_color,
         ])
         .setup(|app| {
             let handle = app.handle();

@@ -1,6 +1,7 @@
 // Efeitos de interface: transições entre telas, brilho que segue o ponteiro,
 // inclinação 3D dos cards e preferência de "efeitos de vidro".
 import { flushSync } from "svelte";
+import { dnd } from "./dnd.svelte";
 
 type VTDoc = Document & { startViewTransition?: (cb: () => void | Promise<void>) => { finished: Promise<void> } };
 
@@ -123,6 +124,10 @@ export function dragScroll(node: HTMLElement) {
   };
   const onMove = (e: PointerEvent) => {
     if (!down) return;
+    if (dnd.active) {
+      down = false; // está arrastando uma música para uma playlist
+      return;
+    }
     const dx = e.clientX - startX;
     if (!moved && Math.abs(dx) < THRESHOLD) return;
     if (!moved) {

@@ -92,6 +92,21 @@ Atalhos: `Espaço` tocar/pausar · `Ctrl+←/→` anterior/próxima · `Ctrl+F` 
 - Modo economia em segundo plano (memória baixa do WebView2 + EcoQoS), bandeja,
   teclas de mídia globais, instância única e iniciar com o Windows.
 
+## Playlists: arrastar e botão direito
+
+- **Segure** qualquer música (listas, fila, "A seguir", Início, player) por ~0,3 s: ela
+  "descola" e suas playlists aparecem no topo, das que você usou por último para as
+  mais antigas. **Arraste e solte** numa playlist para adicionar. `Esc` cancela.
+- **Botão direito** numa música: lista das suas playlists com ✓ onde ela já está —
+  clique para adicionar ou remover.
+
+<img src="docs/drag-to-playlist.png" width="720">
+
+## Cor que acompanha a capa
+
+A tradução da letra, o selo "Sincronizada" e as barras de tempo usam uma cor tirada da
+capa da música, clareada até ter contraste de leitura (≥ 4,5:1), com transição suave.
+
 ## Letra sincronizada e tradução
 
 - Fontes, em ordem: letra **com tempo do próprio YouTube Music** (a mesma faixa que
@@ -112,8 +127,8 @@ Atalhos: `Espaço` tocar/pausar · `Ctrl+←/→` anterior/próxima · `Ctrl+F` 
 
 Quando o app vai para a bandeja ou é minimizado, uma pílula aparece no topo da tela:
 
-- **Compacta**: capa girando + a **letra passando** em sincronia com a música
-  (ou título — artista quando não há letra).
+- **Compacta**: capa girando + a **letra original** em sincronia com a música, inteira
+  (quebra em até 3 linhas; título — artista quando não há letra).
 - **Mouse por cima**: abre com título, artista, linha atual/próxima da letra,
   anterior / tocar-pausar / próxima e progresso. Clique na capa para voltar ao app.
 - **Botão direito**: recolhe num traço discreto no topo; **clique** nele para voltar.

@@ -1,6 +1,6 @@
 [package]
 name = "youtube-music-desk"
-version = "0.6.4"
+version = "0.7.0"
 description = "Cliente desktop leve para o YouTube Music (Tauri + WebView2)"
 authors = ["amaytu"]
 license = "MIT"
@@ -25,6 +25,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1", features = ["sync", "time"] }
 ureq = { version = "3", default-features = false, features = ["rustls", "gzip"] }
+image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp"] }
 
 [target.'cfg(windows)'.dependencies]
 # Mesmas versões usadas internamente pelo tauri/wry (evita duplicar crates).

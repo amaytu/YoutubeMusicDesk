@@ -3,6 +3,8 @@
   import { router } from "../lib/router.svelte";
   import type { Track } from "../lib/types";
   import Cover from "./Cover.svelte";
+  import { songMenu } from "../lib/contextmenu.svelte";
+  import { holdDrag } from "../lib/dnd.svelte";
   import { artistsText } from "../lib/util";
   import Icon from "./Icon.svelte";
 
@@ -59,6 +61,8 @@
       class:active
       role="button"
       tabindex="0"
+      use:holdDrag={t}
+      use:songMenu={t}
       ondblclick={() => player.playTrack(t, playlistId)}
       onkeydown={(e) => e.key === "Enter" && player.playTrack(t, playlistId)}
     >

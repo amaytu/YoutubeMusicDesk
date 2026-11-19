@@ -162,8 +162,8 @@
     background: rgba(255, 255, 255, 0.08);
   }
   .badge.synced {
-    color: var(--accent);
-    background: var(--accent-soft);
+    color: var(--dyn);
+    background: var(--dyn-soft);
   }
   .tr-toggle {
     display: flex;
@@ -266,12 +266,14 @@
     user-select: text;
   }
   .t {
-    font: 500 14px/1.35 var(--font);
-    color: rgba(255, 45, 70, 0.55);
+    font: 600 14px/1.35 var(--font);
+    color: var(--dyn);
+    opacity: 0.72;
     user-select: text;
   }
   .ln.cur .t {
-    color: var(--accent);
+    opacity: 1;
+    text-shadow: 0 1px 10px rgba(0, 0, 0, 0.55);
   }
   .empty {
     padding: 20px 16px;

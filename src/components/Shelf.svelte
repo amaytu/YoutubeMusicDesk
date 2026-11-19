@@ -1,6 +1,8 @@
 <script lang="ts">
   // Prateleira horizontal com setas. Músicas viram uma grade compacta
   // (como as "escolhas rápidas" do YouTube Music).
+  import { songMenu } from "../lib/contextmenu.svelte";
+  import { holdDrag } from "../lib/dnd.svelte";
   import { dragScroll } from "../lib/fx.svelte";
   import { player } from "../lib/player.svelte";
   import type { Item, Shelf, Track } from "../lib/types";
@@ -33,7 +35,7 @@
     <div class="row songs" bind:this={row} use:dragScroll>
       {#each shelf.items as it, i (i)}
         {@const t = asTrack(it)}
-        <button class="tile" class:active={t.videoId === player.state.videoId} onclick={() => player.playTrack(t)}>
+        <button class="tile" class:active={t.videoId === player.state.videoId} onclick={() => player.playTrack(t)} use:holdDrag={t} use:songMenu={t}>
           <div class="tile-art"><Cover src={t.thumb} size={96} /><span class="ov"><Icon name="play" size={14} /></span></div>
           <div class="tile-text">
             <div class="ellipsis t">{t.title}</div>

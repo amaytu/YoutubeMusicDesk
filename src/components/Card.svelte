@@ -2,6 +2,8 @@
   // Card de vidro: inclina seguindo o ponteiro, brilho especular, capa com zoom
   // e "voo" da capa até a próxima tela ao clicar.
   import { openItem, playItem, prefetch } from "../lib/actions";
+  import { songMenu } from "../lib/contextmenu.svelte";
+  import { holdDrag } from "../lib/dnd.svelte";
   import { tilt } from "../lib/fx.svelte";
   import type { Item } from "../lib/types";
   import Cover from "./Cover.svelte";
@@ -30,6 +32,8 @@
   class:round
   class:selected
   use:tilt
+  use:holdDrag={item.kind === "song" ? item : null}
+  use:songMenu={item.kind === "song" ? item : null}
   onpointerenter={() => (hoverTimer = setTimeout(() => prefetch(item), 180))}
   onpointerleave={() => clearTimeout(hoverTimer)}
 >
