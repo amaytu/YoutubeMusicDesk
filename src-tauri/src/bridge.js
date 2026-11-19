@@ -467,29 +467,15 @@
      * A página tem mais de um grupo de chips (e gêneros); deduplica pelo nome.
      */
     queueChips() {
-      const WANTED = [
-        { label: "Tudo", re: /^(tudo|todos|all)$/i },
-        { label: "Conhecidas", re: /^(conhecidas?|familiar)$/i },
-        { label: "Em alta", re: /^(em alta|popular|trending)$/i },
-        { label: "Descobrir", re: /^(descobrir|discover)$/i },
-      ];
-      const all = chipEls();
-      const nameOf = (el) => (text(el.data?.text) || el.textContent).trim();
-      // Usa só o primeiro grupo de chips que tem esses filtros (o da fila):
-      // é nele que clicamos, então o "selecionado" também vem dele.
-      const groupOf = (el) => el.closest("ytmusic-chip-cloud-renderer") ?? el.parentElement;
-      const first = all.find((el) => WANTED.some((w) => w.re.test(nameOf(el))));
-      const group = first ? groupOf(first) : null;
       const out = [];
-      for (const w of WANTED) {
-        const matches = all
-          .map((el, index) => ({ el, index, name: nameOf(el) }))
-          .filter((c) => !group || groupOf(c.el) === group)
-          .filter((c) => w.re.test(c.name));
-        if (!matches.length) continue;
-        const sel = (c) => !!(c.el.data?.isSelected ?? c.el.hasAttribute("is-selected")) || c.el.classList.contains("selected");
-        out.push({ index: matches[0].index, label: w.label, selected: matches.some(sel) });
+      const found = queueChipMap();
+      // O "selecionado" do YT Music nem sempre se atualiza no objeto de dados
+      // (ficava preso em "Tudo"): vale a escolha feita aqui, enquanto a fila for a mesma.
+      const chosen = chosenChip && found.some((c) => c.label === chosenChip) ? chosenChip : null;
+      for (const c of found) {
+        out.push({ index: c.index, label: c.label, selected: chosen ? c.label === chosen : c.selected });
       }
+      if (!chosen && out.length && !out.some((c) => c.selected)) out[0].selected = true;
       return out;
     },
 
@@ -585,6 +571,46 @@
     return out;
   }
 
+  const WANTED_CHIPS = [
+    { label: "Tudo", re: /^(tudo|todos|all)$/i },
+    { label: "Conhecidas", re: /^(conhecidas?|familiar)$/i },
+    { label: "Em alta", re: /^(em alta|popular|trending)$/i },
+    { label: "Descobrir", re: /^(descobrir|discover)$/i },
+  ];
+  /** Filtro escolhido pelo app (vale até tocar outra lista). */
+  let chosenChip = null;
+
+  /** Selecionado pelo DOM (classe/atributos atualizados na hora); dados só como último recurso. */
+  function chipSelected(el) {
+    if (el.hasAttribute("is-selected") || el.classList.contains("selected") || el.classList.contains("iron-selected")) return true;
+    const inner = el.querySelector('[aria-selected="true"], [aria-pressed="true"], .selected');
+    if (inner) return true;
+    const hasDomSignal = el.hasAttribute("aria-selected") || !!el.querySelector("[aria-selected], [aria-pressed]");
+    return hasDomSignal ? el.getAttribute("aria-selected") === "true" : !!el.data?.isSelected;
+  }
+
+  /**
+   * Os 4 filtros da fila, do primeiro grupo de chips que os tem (o da fila).
+   * A página tem mais de um grupo (e gêneros); deduplica pelo nome.
+   */
+  function queueChipMap() {
+    const all = chipEls();
+    const nameOf = (el) => (text(el.data?.text) || el.textContent).trim();
+    const groupOf = (el) => el.closest("ytmusic-chip-cloud-renderer") ?? el.parentElement;
+    const first = all.find((el) => WANTED_CHIPS.some((w) => w.re.test(nameOf(el))));
+    const group = first ? groupOf(first) : null;
+    const out = [];
+    for (const w of WANTED_CHIPS) {
+      const matches = all
+        .map((el, index) => ({ el, index, name: nameOf(el) }))
+        .filter((c) => !group || groupOf(c.el) === group)
+        .filter((c) => w.re.test(c.name));
+      if (!matches.length) continue;
+      out.push({ index: matches[0].index, el: matches[0].el, label: w.label, selected: matches.some((c) => chipSelected(c.el)) });
+    }
+    return out;
+  }
+
   /** Chips do "A seguir" (Tudo / Conhecidas / Descobrir) da página do player. */
   function chipEls() {
     const page = q("ytmusic-player-page") ?? document;
@@ -599,6 +625,7 @@
   const SHUFFLE_PARAMS = "wAEB8gECKAE%3D";
 
   async function play({ videoId, playlistId, shuffle, endpoint: given, fallback }) {
+    if (!given) chosenChip = null;
     const endpoint =
       given ??
       (videoId
@@ -697,9 +724,16 @@
       setTimeout(emitState, 300);
     },
     /** Filtro do "A seguir": clica no chip correspondente do YouTube Music. */
-    selectQueueChip(i) {
-      const el = chipEls()[Number(i)];
-      if (el) (q("a", el) ?? q("button", el) ?? q("#chip", el) ?? el).click();
+    selectQueueChip(arg) {
+      // Aceita o rótulo ("Em alta") ou o índice antigo; o rótulo é procurado de novo
+      // na hora porque o YT Music pode ter redesenhado os chips.
+      const label = typeof arg === "object" && arg ? arg.label : null;
+      const map = queueChipMap();
+      const hit = (label && map.find((c) => c.label === label)) || map.find((c) => c.index === Number(arg?.index ?? arg));
+      const el = hit?.el ?? chipEls()[Number(arg?.index ?? arg)];
+      if (!el) return;
+      chosenChip = hit?.label ?? null;
+      (q("a", el) ?? q("button", el) ?? q("#chip", el) ?? el).click();
     },
     /** Toca um item da fila sem desmontar a fila (usa o endpoint do próprio item). */
     playQueueItem({ videoId, index }) {

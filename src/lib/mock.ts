@@ -221,7 +221,7 @@ export function cmd(name: string, arg: any) {
     case "repeatOne": state.repeat = arg ? "ONE" : "NONE"; break;
     case "shuffle": queue = [...queue.slice(0, qi + 1), ...queue.slice(qi + 1).sort(() => rnd() - 0.5)]; break;
     case "selectQueueChip": {
-      chip = Number(arg);
+      chip = Number(typeof arg === "object" && arg ? arg.index : arg);
       const rest = [allTracks.slice(12, 30), allTracks.slice(0, 12), allTracks.slice(45, 60), allTracks.slice(30, 45)][chip] ?? allTracks.slice(12, 30);
       queue = [...queue.slice(0, qi + 1), ...rest.filter((t) => t.videoId !== queue[qi].videoId)];
       return;

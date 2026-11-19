@@ -1,6 +1,6 @@
 [package]
 name = "youtube-music-desk"
-version = "1.0.2"
+version = "1.0.3"
 description = "Cliente desktop leve para o YouTube Music (Tauri + WebView2)"
 authors = ["amaytu"]
 license = "MIT"

@@ -65,11 +65,11 @@
   });
 
   /** Troca o filtro do mix (Tudo / Conhecido / Descobrir) e recarrega a fila. */
-  async function selectChip(i: number) {
+  async function selectChip(i: number, label: string) {
     if (chipBusy) return;
     chipBusy = true;
     chips = chips.map((c) => ({ ...c, selected: c.index === i }));
-    playerCmd("selectQueueChip", i);
+    playerCmd("selectQueueChip", { index: i, label });
     await new Promise((r) => setTimeout(r, 1200));
     await Promise.all([loadQueue(), loadChips()]);
     setTimeout(loadQueue, 1500); // o YT Music às vezes completa a fila em duas etapas
@@ -144,7 +144,7 @@
         <div class="chips" class:busy={chipBusy}>
           {#if chips.length}
             {#each chips as c (c.index)}
-              <button class="chip" class:sel={c.selected} onclick={() => selectChip(c.index)}>{c.label}</button>
+              <button class="chip" class:sel={c.selected} onclick={() => selectChip(c.index, c.label)}>{c.label}</button>
             {/each}
           {:else}
             {#each DEFAULT_CHIPS as label, i}
