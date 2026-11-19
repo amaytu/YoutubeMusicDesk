@@ -56,8 +56,9 @@
   }
 
   // Recarrega fila/filtros quando a faixa muda (só com a aba aberta).
+  const videoId = $derived(s.videoId);
   $effect(() => {
-    s.videoId;
+    videoId;
     player.queueVersion;
     if (tab === "queue" || tab === "upnext") loadQueue();
     if (tab === "upnext") loadChips();
@@ -92,7 +93,6 @@
   }
 </script>
 
-<svelte:window onkeydown={(e) => e.key === "Escape" && close()} />
 
 <div class="now">
   <div class="backdrop" aria-hidden="true">

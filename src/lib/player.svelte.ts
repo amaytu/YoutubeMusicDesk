@@ -1,7 +1,7 @@
 // Estado global do player (Svelte 5 runes).
 // O tempo de reprodução é interpolado localmente: o player oculto só avisa em
 // eventos (play, pause, seek, troca de faixa), então não há tráfego por segundo.
-import { api, onYtm, playerCmd, showLogin, signOut, clearCache } from "./api";
+import { api, net, onYtm, playerCmd, showLogin, signOut, clearCache } from "./api";
 import { vt } from "./fx.svelte";
 import type { Collection, PlayerState, RepeatMode, Track } from "./types";
 
@@ -55,6 +55,12 @@ class Player {
     api.auth().then((a) => (this.signedIn ??= a.signedIn)).catch(() => {});
     api.state().then((s) => s && this.#apply(s)).catch(() => {});
     document.addEventListener("visibilitychange", () => this.#syncTimer());
+    // Internet voltou depois de uma falha: recarrega as telas sozinho.
+    window.addEventListener("online", () => {
+      if (!net.failed) return;
+      net.failed = false;
+      setTimeout(() => this.authVersion++, 1500);
+    });
   }
 
   #lastUpdate = Date.now();
@@ -90,12 +96,17 @@ class Player {
 
   /** Abre/fecha/troca a aba do "Tocando agora" com transição. */
   openNow(tab: null | NowTab) {
+    // Decide pelo último pedido (a transição anterior pode não ter aplicado ainda):
+    // abrir e apertar Esc logo em seguida não pode deixar a tela aberta.
+    const cur = this.#nowTarget;
     // Ao abrir pela capa/barra, já mostra a fila.
-    if (this.nowPlaying === null && tab === "art") tab = "queue";
-    const opening = (this.nowPlaying === null) !== (tab === null);
-    if (opening) vt(() => (this.nowPlaying = tab));
+    if (cur === null && tab === "art") tab = "queue";
+    this.#nowTarget = tab;
+    const opening = (cur === null) !== (tab === null);
+    if (opening) vt(() => (this.nowPlaying = this.#nowTarget));
     else this.nowPlaying = tab;
   }
+  #nowTarget: null | NowTab = null;
 
   get hasTrack() {
     return !!this.state.videoId;

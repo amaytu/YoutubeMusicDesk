@@ -220,14 +220,34 @@
       headers.Authorization = `SAPISIDHASH ${ts}_${await sha1(`${ts} ${sapisid} ${location.origin}`)}`;
     }
     const key = cfg.get("INNERTUBE_API_KEY");
-    const res = await fetch(`/youtubei/v1/${endpoint}?prettyPrint=false${key ? `&key=${key}` : ""}`, {
-      method: "POST",
-      credentials: "include",
-      headers,
-      body: JSON.stringify({ context: mobile ? mobileContext(cfg) : cfg.get("INNERTUBE_CONTEXT"), ...body }),
-    });
+    let res;
+    try {
+      res = await fetch(`/youtubei/v1/${endpoint}?prettyPrint=false${key ? `&key=${key}` : ""}`, {
+        method: "POST",
+        credentials: "include",
+        headers,
+        body: JSON.stringify({ context: mobile ? mobileContext(cfg) : cfg.get("INNERTUBE_CONTEXT"), ...body }),
+      });
+    } catch (_) {
+      throw new Error("Sem conexão com a internet");
+    }
+    if (res.status === 401 && !mobile) refreshSession();
     if (!res.ok) throw new Error(`YouTube Music respondeu ${res.status}`);
     return res.json();
+  }
+
+  /**
+   * Sessão expirada (401): recarrega a página para renovar os tokens. Se a conta
+   * saiu de verdade, o "ready" seguinte avisa a UI (signedIn: false).
+   * No máximo uma vez a cada 2 min, para nunca entrar em loop.
+   */
+  function refreshSession() {
+    const KEY = "__ymdSessionReload";
+    const lastAt = Number(sessionStorage.getItem(KEY) ?? 0);
+    if (Date.now() - lastAt < 120_000) return;
+    sessionStorage.setItem(KEY, String(Date.now()));
+    const wasPlaying = !!q("video") && !q("video").paused;
+    if (!wasPlaying) setTimeout(() => location.reload(), 300);
   }
 
   function mobileContext(cfg) {
@@ -549,6 +569,8 @@
         ? { watchEndpoint: { videoId, playlistId } }
         : { watchPlaylistEndpoint: { playlistId, params: shuffle ? SHUFFLE_PARAMS : undefined } });
     const before = player()?.getVideoData?.()?.video_id;
+    const listNow = () => new URL(location.href).searchParams.get("list");
+    const beforeList = listNow();
     if (videoId && videoId === before) {
       player()?.seekTo?.(0, true);
       player()?.playVideo?.();
@@ -559,6 +581,8 @@
         await sleep(100);
         const now = player()?.getVideoData?.()?.video_id;
         if (now && now !== before && (!videoId || now === videoId)) return true;
+        // playlist que começa na mesma música que já tocava: a URL mostra a lista nova
+        if (!videoId && playlistId && now && beforeList !== playlistId && listNow() === playlistId) return true;
       }
       return false;
     };

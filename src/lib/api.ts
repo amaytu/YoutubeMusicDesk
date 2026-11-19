@@ -13,9 +13,17 @@ async function invoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T
   return invoke<T>(cmd, args);
 }
 
+/** Alguma chamada falhou por falta de internet (a UI recarrega ao voltar). */
+export const net = { failed: false };
+
 async function call<T>(method: string, args?: Record<string, unknown>): Promise<T> {
   if (!IS_TAURI) return (await mock()).call(method, args) as Promise<T>;
-  return invoke<T>("ytm", { method, args });
+  try {
+    return await invoke<T>("ytm", { method, args });
+  } catch (e) {
+    if (/conex|internet|não respondeu/i.test(String(e))) net.failed = true;
+    throw e;
+  }
 }
 
 // Cache curto: voltar para uma tela já vista é instantâneo.

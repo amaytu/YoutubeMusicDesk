@@ -50,10 +50,13 @@ export const dnd = new Dnd();
 export function holdDrag(node: HTMLElement, track: Track | null | undefined) {
   let current = track;
   let timer: ReturnType<typeof setTimeout> | undefined;
+  let pendingTimer: ReturnType<typeof setTimeout> | undefined;
   let start = { x: 0, y: 0 };
 
   const cleanupPending = () => {
     clearTimeout(timer);
+    clearTimeout(pendingTimer);
+    timer = undefined;
     node.classList.remove("hold-pending");
     window.removeEventListener("pointermove", pendingMove);
     window.removeEventListener("pointerup", cleanupPending);
@@ -63,11 +66,24 @@ export function holdDrag(node: HTMLElement, track: Track | null | undefined) {
     if (Math.hypot(e.clientX - start.x, e.clientY - start.y) > MOVE_TOLERANCE) cleanupPending();
   };
 
-  const dragMove = (e: PointerEvent) => dnd.move(e.clientX, e.clientY);
-  const dragEnd = () => {
+  const dragMove = (e: PointerEvent) => {
+    // botão já solto (ex.: soltou fora da janela): encerra sem adicionar
+    if (e.buttons === 0) return abort();
+    dnd.move(e.clientX, e.clientY);
+  };
+  const stopListening = () => {
     window.removeEventListener("pointermove", dragMove);
     window.removeEventListener("pointerup", dragEnd);
+    window.removeEventListener("pointercancel", abort);
+    window.removeEventListener("blur", abort);
     window.removeEventListener("keydown", onKey, true);
+  };
+  const abort = () => {
+    stopListening();
+    dnd.cancel();
+  };
+  const dragEnd = () => {
+    stopListening();
     // o navegador dispara um "click" ao soltar: não deve tocar/abrir nada
     window.addEventListener("click", swallow, { capture: true, once: true });
     setTimeout(() => window.removeEventListener("click", swallow, true), 0);
@@ -76,10 +92,7 @@ export function holdDrag(node: HTMLElement, track: Track | null | undefined) {
   const onKey = (e: KeyboardEvent) => {
     if (e.key !== "Escape") return;
     e.stopPropagation();
-    window.removeEventListener("pointermove", dragMove);
-    window.removeEventListener("pointerup", dragEnd);
-    window.removeEventListener("keydown", onKey, true);
-    dnd.cancel();
+    abort();
   };
   const swallow = (e: Event) => {
     e.preventDefault();
@@ -94,7 +107,7 @@ export function holdDrag(node: HTMLElement, track: Track | null | undefined) {
     window.addEventListener("pointerup", cleanupPending);
     window.addEventListener("pointercancel", cleanupPending);
     // pequeno retorno visual de que está "pegando"
-    setTimeout(() => timer && node.classList.add("hold-pending"), 110);
+    pendingTimer = setTimeout(() => timer && node.classList.add("hold-pending"), 110);
     timer = setTimeout(() => {
       const t = current;
       cleanupPending();
@@ -103,6 +116,8 @@ export function holdDrag(node: HTMLElement, track: Track | null | undefined) {
       dnd.begin(t, start.x, start.y);
       window.addEventListener("pointermove", dragMove);
       window.addEventListener("pointerup", dragEnd);
+      window.addEventListener("pointercancel", abort);
+      window.addEventListener("blur", abort);
       window.addEventListener("keydown", onKey, true);
     }, HOLD_MS);
   };
@@ -114,6 +129,8 @@ export function holdDrag(node: HTMLElement, track: Track | null | undefined) {
     },
     destroy() {
       cleanupPending();
+      // o elemento pode sumir no meio do arraste (lista recarregou): a camada
+      // continua funcionando porque os ouvintes estão na janela.
       node.removeEventListener("pointerdown", onDown);
     },
   };

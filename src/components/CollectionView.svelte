@@ -3,6 +3,7 @@
   // biblioteca) ou "page" (tela cheia, ao abrir pela busca/início).
   import { api } from "../lib/api";
   import { player } from "../lib/player.svelte";
+  import { playlists } from "../lib/playlists.svelte";
   import { router } from "../lib/router.svelte";
   import type { Hint } from "../lib/router.svelte";
   import type { Collection } from "../lib/types";
@@ -19,7 +20,9 @@
   }: { id: string; layout?: "page" | "panel"; hint?: Hint; onclose?: () => void } = $props();
 
   let attempt = $state(0);
-  const data = $derived.by(() => { attempt; return api.collection(id); });
+  // Recarrega se esta playlist foi alterada (música adicionada/removida).
+  const edited = $derived(playlists.edits[id.replace(/^VL/, "")] ?? 0);
+  const data = $derived.by(() => { attempt; edited; return api.collection(id); });
   const isAlbum = $derived(id.startsWith("MPRE"));
 </script>
 

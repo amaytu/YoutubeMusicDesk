@@ -29,12 +29,13 @@
   // Mantém o menu dentro da janela (abre para cima/esquerda se faltar espaço).
   $effect(() => {
     if (!trackMenu.open) return;
-    const h = box?.offsetHeight ?? 300;
+    // altura máxima do menu (a lista carrega depois e o menu cresce)
+    const h = Math.min(Math.max(box?.offsetHeight ?? 0, Math.min(460, innerHeight * 0.7)), innerHeight - 16);
     const right = trackMenu.x + W > innerWidth - 8;
     const up = trackMenu.y + h > innerHeight - 8;
     pos = {
       left: Math.max(8, right ? trackMenu.x - W : trackMenu.x),
-      top: Math.max(8, up ? trackMenu.y - h : trackMenu.y),
+      top: Math.max(8, Math.min(up ? trackMenu.y - h : trackMenu.y, innerHeight - h - 8)),
       origin: `${up ? "bottom" : "top"} ${right ? "right" : "left"}`,
     };
   });

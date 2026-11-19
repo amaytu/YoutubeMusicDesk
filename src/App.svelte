@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { trackMenu } from "./lib/contextmenu.svelte";
   import Background from "./components/Background.svelte";
   import BottomNav from "./components/BottomNav.svelte";
   import DragLayer from "./components/DragLayer.svelte";
@@ -33,6 +34,9 @@
       router.back();
     } else if (typing) {
       return;
+    } else if (e.key === "Escape") {
+      // Aqui (e não no componente): funciona mesmo durante a animação de abrir.
+      if (!trackMenu.open) player.openNow(null);
     } else if (e.code === "Space") {
       e.preventDefault();
       player.toggle();

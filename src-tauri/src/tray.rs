@@ -187,5 +187,11 @@ pub fn set_track<R: Runtime>(app: &AppHandle<R>, state: &serde_json::Value) {
         }
         t
     };
-    let _ = tray.set_tooltip(Some(text));
+    // O estado chega a cada poucos segundos: só mexe no ícone se o texto mudou.
+    static LAST: std::sync::Mutex<String> = std::sync::Mutex::new(String::new());
+    let mut last = LAST.lock().unwrap();
+    if *last != text {
+        let _ = tray.set_tooltip(Some(text.as_str()));
+        *last = text;
+    }
 }

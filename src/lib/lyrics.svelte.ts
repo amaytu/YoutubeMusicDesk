@@ -44,26 +44,36 @@ export function loadLyrics(s: PlayerState): Promise<LyricSet | null> {
   if (!s.videoId || !(s.duration > 0)) return new Promise(() => {}); // aguarda
   let p = cache.get(key);
   if (!p) {
+    let errored = false;
     p = (async (): Promise<LyricSet | null> => {
       // 1) letra com tempo do próprio YouTube Music (mesma faixa = sem erro de versão)
       try {
         const t = await api.timedLyrics(s.videoId);
         if (t?.lines.length) return { lines: t.lines, synced: true, source: "youtube" };
-      } catch {}
+      } catch {
+        errored = true;
+      }
       // 2) LRCLIB (versão com a mesma duração)
       try {
         const lrc = await syncedLyrics(s.title, s.artist, s.album, s.duration);
         const lines = lrc ? parseLrc(lrc) : [];
         if (lines.length) return { lines, synced: true, source: "lrclib" };
-      } catch {}
+      } catch {
+        errored = true;
+      }
       // 3) sem tempo: distribui ao longo da música
       try {
         const l = await api.lyrics(s.videoId);
         const lines = l?.text ? spread(l.text, s.duration) : [];
         if (lines.length) return { lines, synced: false, source: "aproximada" };
-      } catch {}
+      } catch {
+        errored = true;
+      }
       return null;
     })();
+    // Falhou por erro (ex.: sem internet), não por falta de letra: tenta de novo depois.
+    const mine = p;
+    mine.then((r) => !r && errored && cache.get(key) === mine && cache.delete(key));
     cache.set(key, p);
     if (cache.size > 50) cache.delete(cache.keys().next().value!);
   }

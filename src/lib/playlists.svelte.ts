@@ -23,6 +23,8 @@ const readMru = (): Record<string, number> => {
 
 class Playlists {
   mru = $state<Record<string, number>>(readMru());
+  /** playlistId -> momento da última alteração (telas abertas recarregam). */
+  edits = $state<Record<string, number>>({});
   toast = $state<{ id: number; text: string; thumb?: string; error?: boolean } | null>(null);
   #toastTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -45,7 +47,7 @@ class Playlists {
     try {
       await api.editPlaylist(t.playlistId, track.videoId, true);
       this.#touch(t.playlistId);
-      invalidate("collection", { id: "VL" + t.playlistId });
+      this.#changed(t.playlistId);
       this.notify(`Adicionada a “${t.title}”`, t.thumb);
       return true;
     } catch (e) {
@@ -57,13 +59,18 @@ class Playlists {
   async remove(track: Track, t: Target) {
     try {
       await api.editPlaylist(t.playlistId, track.videoId, false);
-      invalidate("collection", { id: "VL" + t.playlistId });
+      this.#changed(t.playlistId);
       this.notify(`Removida de “${t.title}”`, t.thumb);
       return true;
     } catch {
       this.notify(`Não foi possível remover de “${t.title}”`, undefined, true);
       return false;
     }
+  }
+
+  #changed(playlistId: string) {
+    invalidate("collection", { id: "VL" + playlistId });
+    this.edits = { ...this.edits, [playlistId]: Date.now() };
   }
 
   #touch(playlistId: string) {
