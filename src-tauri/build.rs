@@ -13,6 +13,10 @@ fn main() {
             "synced_lyrics",
             "translate_lines",
             "cover_color",
+            "get_prefs",
+            "set_pref",
+            "check_update",
+            "install_update",
         ]),
     ))
     .expect("falha no tauri-build");

@@ -4,6 +4,7 @@
   import { backOut } from "svelte/easing";
   import { fade, fly } from "svelte/transition";
   import { dnd } from "../lib/dnd.svelte";
+  import { dialog } from "../lib/dialog.svelte";
   import { playlists, type Target } from "../lib/playlists.svelte";
   import { artistsText } from "../lib/util";
   import Cover from "./Cover.svelte";
@@ -23,7 +24,13 @@
       .catch(() => (failed = true));
   });
 
-  dnd.onDrop = (track, id) => {
+  const NEW = "__new__";
+  dnd.onDrop = async (track, id) => {
+    if (id === NEW) {
+      const name = await dialog.prompt("Nova playlist", { placeholder: "Nome da playlist", confirm: "Criar e adicionar" });
+      if (name) playlists.create(name, track);
+      return;
+    }
     const target = targets?.find((x) => x.playlistId === id);
     if (target) playlists.add(track, target);
   };
@@ -37,10 +44,12 @@
         <p class="msg">Não foi possível carregar suas playlists.</p>
       {:else if targets === null}
         {#each Array(5) as _}<div class="target skeleton"></div>{/each}
-      {:else if targets.length === 0}
-        <p class="msg">Você ainda não tem playlists próprias.</p>
       {:else}
-        {#each targets.slice(0, 8) as t, i (t.playlistId)}
+        <div class="target new" class:over={dnd.overId === NEW} data-drop-id={NEW} in:fly={{ y: -12, duration: 320, easing: backOut }}>
+          <div class="art plus"><Icon name="plus" size={26} /></div>
+          <span class="name">Nova playlist</span>
+        </div>
+        {#each targets.slice(0, 7) as t, i (t.playlistId)}
           <div
             class="target"
             class:over={dnd.overId === t.playlistId}
@@ -67,6 +76,21 @@
 {/if}
 
 <style>
+  .art.plus {
+    width: 100%;
+    aspect-ratio: 1;
+    box-sizing: border-box;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    border: 1.5px dashed rgba(255, 255, 255, 0.28);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--dyn-strong, var(--accent));
+  }
+  .target.new.over .art.plus {
+    border-color: var(--dyn-strong, var(--accent));
+    background: var(--dyn-soft, var(--accent-soft));
+  }
   .bar {
     position: fixed;
     z-index: 100;

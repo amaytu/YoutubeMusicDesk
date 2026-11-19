@@ -18,6 +18,10 @@
     "allow-sign-out",
     "allow-synced-lyrics",
     "allow-translate-lines",
-    "allow-cover-color"
+    "allow-cover-color",
+    "allow-get-prefs",
+    "allow-set-pref",
+    "allow-check-update",
+    "allow-install-update"
   ]
 }

@@ -8,9 +8,11 @@ mod lyrics;
 mod media;
 mod palette;
 mod power;
+mod prefs;
 mod settings;
 mod translate;
 mod tray;
+mod updater;
 mod window;
 
 use std::sync::Mutex;
@@ -62,6 +64,10 @@ fn main() {
             lyrics::synced_lyrics,
             translate::translate_lines,
             palette::cover_color,
+            prefs::get_prefs,
+            prefs::set_pref,
+            updater::check_update,
+            updater::install_update,
         ])
         .setup(|app| {
             let handle = app.handle();

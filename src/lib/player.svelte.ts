@@ -3,6 +3,7 @@
 // eventos (play, pause, seek, troca de faixa), então não há tráfego por segundo.
 import { api, net, onYtm, playerCmd, showLogin, signOut, clearCache } from "./api";
 import { vt } from "./fx.svelte";
+import { likes } from "./playlists.svelte";
 import type { Collection, PlayerState, RepeatMode, Track } from "./types";
 
 const EMPTY: PlayerState = {
@@ -47,6 +48,7 @@ class Player {
       else if (ev.kind === "auth") {
         if (ev.data.changed && this.signedIn !== null) {
           clearCache();
+          likes.reset();
           this.authVersion++;
         }
         this.signedIn = ev.data.signedIn;
@@ -143,6 +145,7 @@ class Player {
   }
   like() {
     this.state = { ...this.state, liked: !this.state.liked };
+    if (this.state.videoId) likes.set(this.state.videoId, this.state.liked);
     playerCmd("like");
   }
   /** Alterna entre "em sequência" e "repetir esta música". */

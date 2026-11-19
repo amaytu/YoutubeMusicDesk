@@ -7,7 +7,16 @@ use tauri::{
 };
 use tauri_plugin_autostart::ManagerExt;
 
-use crate::{login, media, settings, window};
+use crate::{login, media, prefs, settings, window};
+
+/// id do item no menu -> chave da preferência.
+const CHECKS: [(&str, &str); 5] = [
+    ("autostart", "autostart"),
+    ("economy", "economy"),
+    ("close_to_tray", "closeToTray"),
+    ("media_keys", "mediaKeys"),
+    ("island", "island"),
+];
 
 const TRAY_ID: &str = "main-tray";
 const APP_NAME: &str = "YouTube Music Desk";
@@ -116,42 +125,25 @@ pub fn create<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
             "playpause" => media::send(app, media::Cmd::PlayPause),
             "next" => media::send(app, media::Cmd::Next),
             "prev" => media::send(app, media::Cmd::Previous),
-            "autostart" => {
-                let al = app.autolaunch();
-                let want = !al.is_enabled().unwrap_or(false);
-                let _ = if want { al.enable() } else { al.disable() };
-                let _ = autostart.set_checked(al.is_enabled().unwrap_or(false));
-            }
-            "economy" => {
-                let s = settings::update(app, |s| s.economy_when_hidden = !s.economy_when_hidden);
-                let _ = economy.set_checked(s.economy_when_hidden);
-            }
-            "close_to_tray" => {
-                let s = settings::update(app, |s| s.close_to_tray = !s.close_to_tray);
-                let _ = close_tray.set_checked(s.close_to_tray);
-            }
-            "island" => {
-                let s = settings::update(app, |s| s.island_enabled = !s.island_enabled);
-                let _ = island.set_checked(s.island_enabled);
-                crate::island::sync(app);
-            }
-            "media_keys" => {
-                let s = settings::update(app, |s| s.media_keys = !s.media_keys);
-                media::set_enabled(app, s.media_keys);
-                let _ = keys.set_checked(s.media_keys);
-            }
-            "reload" => {
-                // Recarrega o player oculto e a interface.
-                for label in [crate::PLAYER_WINDOW, crate::MAIN_WINDOW] {
-                    if let Some(w) = app.get_webview_window(label) {
-                        let _ = w.eval("location.reload()");
-                    }
+            "reload" => prefs::reload_all(app),
+            "quit" => app.exit(0),
+            // Opções de marcar: aplicadas num só lugar (igual à tela de Configurações).
+            id => {
+                if let Some(key) = CHECKS.iter().find(|(m, _)| *m == id).map(|(_, k)| *k) {
+                    let _ = prefs::apply(app, key, None);
                 }
             }
-            "quit" => app.exit(0),
-            _ => {}
         });
 
+    app.manage(prefs::TrayChecks {
+        items: vec![
+            ("autostart", autostart),
+            ("economy", economy),
+            ("closeToTray", close_tray),
+            ("mediaKeys", keys),
+            ("island", island),
+        ],
+    });
     if let Some(icon) = app.default_window_icon() {
         builder = builder.icon(icon.clone());
     }

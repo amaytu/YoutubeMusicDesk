@@ -4,6 +4,24 @@
   import { api } from "../lib/api";
   import { player } from "../lib/player.svelte";
   import { playlists } from "../lib/playlists.svelte";
+  import { dialog } from "../lib/dialog.svelte";
+
+  async function rename(c: Collection) {
+    if (!c.playlistId) return;
+    const name = await dialog.prompt("Renomear playlist", { value: c.title, confirm: "Salvar" });
+    if (name && name !== c.title) await playlists.rename(c.playlistId, name);
+  }
+  async function remove(c: Collection) {
+    if (!c.playlistId) return;
+    const ok = await dialog.confirm(`Excluir “${c.title}”?`, {
+      message: "A playlist será apagada da sua conta do YouTube Music. Isso não pode ser desfeito.",
+      confirm: "Excluir",
+      danger: true,
+    });
+    if (!ok || !(await playlists.destroy(c.playlistId, c.title))) return;
+    if (onclose) onclose();
+    else router.back();
+  }
   import { router } from "../lib/router.svelte";
   import type { Hint } from "../lib/router.svelte";
   import type { Collection } from "../lib/types";
@@ -69,6 +87,10 @@
       <div class="actions">
         <button class="btn primary" onclick={() => player.playCollection(c)}><Icon name="play" size={14} /> Tocar</button>
         <button class="btn" onclick={() => player.playCollection(c, true)}><Icon name="shuffle" size={14} /> Aleatório</button>
+        {#if c.editable && c.playlistId}
+          <button class="icon-btn" title="Renomear" onclick={() => rename(c)}><Icon name="edit" size={16} /></button>
+          <button class="icon-btn" title="Excluir playlist" onclick={() => remove(c)}><Icon name="trash" size={16} /></button>
+        {/if}
         {#if layout === "panel"}
           <button class="icon-btn" title="Abrir página" onclick={() => router.go({ name: "collection", id: c.id })}><Icon name="expand" size={16} /></button>
         {/if}

@@ -3,7 +3,8 @@
   import { backOut } from "svelte/easing";
   import { scale } from "svelte/transition";
   import { trackMenu } from "../lib/contextmenu.svelte";
-  import { playlists, type Target } from "../lib/playlists.svelte";
+  import { dialog } from "../lib/dialog.svelte";
+  import { likes, playlists, type Target } from "../lib/playlists.svelte";
   import { artistsText } from "../lib/util";
   import Cover from "./Cover.svelte";
   import Icon from "./Icon.svelte";
@@ -40,6 +41,21 @@
     };
   });
 
+  const liked = $derived(trackMenu.track ? likes.is(trackMenu.track.videoId) : null);
+
+  async function newPlaylist() {
+    const track = trackMenu.track;
+    if (!track) return;
+    trackMenu.close();
+    const name = await dialog.prompt("Nova playlist", { placeholder: "Nome da playlist", confirm: "Criar e adicionar" });
+    if (name) await playlists.create(name, track);
+  }
+
+  function like() {
+    const track = trackMenu.track;
+    if (track) likes.toggle(track);
+  }
+
   async function toggle(t: Target) {
     const track = trackMenu.track;
     if (!track || busy) return;
@@ -70,9 +86,16 @@
         <div class="h-title">{trackMenu.track.title}</div>
         <div class="h-sub">{artistsText(trackMenu.track.artists, trackMenu.track.subtitle)}</div>
       </div>
+      <button class="like" class:on={liked} onclick={like} title={liked ? "Tirar curtida" : "Curtir"} aria-pressed={!!liked}>
+        <Icon name={liked ? "heart-fill" : "heart"} size={18} />
+      </button>
     </div>
     <div class="section">Adicionar ou remover da playlist</div>
     <div class="list">
+      <button class="item new" onclick={newPlaylist}>
+        <div class="i-art plus"><Icon name="plus" size={18} /></div>
+        <span class="i-name">Nova playlist…</span>
+      </button>
       {#if failed}
         <p class="msg">Não foi possível carregar suas playlists.</p>
       {:else if targets === null}
@@ -96,6 +119,35 @@
 {/if}
 
 <style>
+  .like {
+    flex: none;
+    width: 34px;
+    height: 34px;
+    margin-left: auto;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    color: rgba(255, 255, 255, 0.7);
+    transition: background 0.2s, color 0.2s, transform 0.25s;
+  }
+  .like:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+  }
+  .like:active {
+    transform: scale(0.85);
+  }
+  .like.on {
+    color: var(--dyn-strong, var(--accent));
+  }
+  .i-art.plus {
+    height: 32px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--dyn-strong, var(--accent));
+  }
   .scrim {
     position: fixed;
     inset: 0;

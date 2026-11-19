@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { playlists } from "../lib/playlists.svelte";
   // Grade da biblioteca com painel lateral de faixas (álbuns e playlists).
   import { openItem } from "../lib/actions";
   import { sheen } from "../lib/fx.svelte";
@@ -16,7 +17,9 @@
     load,
     noun,
     sorts,
+    onCreate,
   }: {
+    onCreate?: () => void;
     title: string;
     load: () => Promise<Entry[]>;
     noun: [string, string];
@@ -28,7 +31,8 @@
   let sortId = $state("default");
   let selected = $state<string | null>(null);
 
-  const data = $derived.by(() => { attempt; player.authVersion; return load(); });
+  // libraryVersion: playlist criada/renomeada/excluída recarrega a grade.
+  const data = $derived.by(() => { attempt; player.authVersion; playlists.libraryVersion; return load(); });
 
   function view(items: Entry[]) {
     const f = filter.trim().toLowerCase();
@@ -52,6 +56,9 @@
       <h1>{title}</h1>
       {#await data then items}<span class="count">{plural(items.length, noun[0], noun[1])}</span>{/await}
       <span class="grow"></span>
+      {#if onCreate && player.signedIn}
+        <button class="btn primary new" onclick={onCreate}><Icon name="plus" size={15} /> Nova</button>
+      {/if}
       <label class="field">
         <Icon name="filter" size={15} />
         <input bind:value={filter} placeholder="Filtrar" spellcheck="false" />
@@ -100,6 +107,12 @@
 </div>
 
 <style>
+  .new {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+  }
   .lib {
     height: 100%;
     display: grid;

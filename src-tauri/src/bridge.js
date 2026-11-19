@@ -369,6 +369,7 @@
         year: sub.year,
         thumb: thumbOf(h.thumbnail),
         playlistId,
+        editable: !!find(first, "musicEditablePlaylistDetailHeaderRenderer"),
         tracks,
       };
     },
@@ -514,6 +515,41 @@
         : { action: "ACTION_REMOVE_VIDEO_BY_VIDEO_ID", removedVideoId: videoId };
       const r = await api("browse/edit_playlist", { playlistId, actions: [action] });
       if (r.status && r.status !== "STATUS_SUCCEEDED") throw new Error("O YouTube Music recusou a alteração");
+      return true;
+    },
+
+    /** Cria uma playlist (privada por padrão), já com as músicas indicadas. */
+    async createPlaylist({ title, privacy = "PRIVATE", videoIds = [] }) {
+      const name = String(title ?? "").trim().slice(0, 150);
+      if (!name) throw new Error("Dê um nome para a playlist");
+      const body = { title: name, description: "", privacyStatus: privacy };
+      if (videoIds.length) body.videoIds = videoIds;
+      const r = await api("playlist/create", body);
+      if (!r.playlistId) throw new Error("O YouTube Music não criou a playlist");
+      return { playlistId: r.playlistId, title: name };
+    },
+
+    async renamePlaylist({ playlistId, title }) {
+      const name = String(title ?? "").trim().slice(0, 150);
+      if (!name) throw new Error("Dê um nome para a playlist");
+      const r = await api("browse/edit_playlist", {
+        playlistId,
+        actions: [{ action: "ACTION_SET_PLAYLIST_NAME", playlistName: name }],
+      });
+      if (r.status && r.status !== "STATUS_SUCCEEDED") throw new Error("O YouTube Music recusou a alteração");
+      return true;
+    },
+
+    async deletePlaylist({ playlistId }) {
+      await api("playlist/delete", { playlistId });
+      return true;
+    },
+
+    /** Curtir (like=true) ou tirar a curtida de qualquer música. */
+    async rate({ videoId, like }) {
+      await api(like ? "like/like" : "like/removelike", { target: { videoId } });
+      // Se for a música tocando, a barra do player atualiza sozinha; avisa a UI.
+      setTimeout(emitState, 400);
       return true;
     },
 

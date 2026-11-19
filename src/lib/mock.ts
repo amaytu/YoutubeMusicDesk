@@ -60,8 +60,9 @@ ARTISTS.forEach((artist, ai) => {
   }
 });
 const allTracks = albums.flatMap((a) => a.tracks);
+const likedIds = new Set(allTracks.slice(0, 60).map((t) => t.videoId));
 
-const playlists: (PlaylistItem & { tracks: Track[] })[] = ["Foco total", "Treino", "Chuva lá fora", "Road trip", "Anos 2010", "Descobertas da semana"].map((t, i) => ({
+let playlists: (PlaylistItem & { tracks: Track[] })[] = ["Foco total", "Treino", "Chuva lá fora", "Road trip", "Anos 2010", "Descobertas da semana"].map((t, i) => ({
   kind: "playlist", id: `VLPLmock${i}`, title: t, subtitle: `Playlist • ${20 + i * 7} músicas`, thumb: cover(t),
   tracks: Array.from({ length: 20 + i * 3 }, () => pick(allTracks)),
 }));
@@ -79,7 +80,7 @@ function collection(id: string): Collection {
   const p = playlists.find((x) => x.id === id) ?? playlists[0];
   return {
     kind: "playlist", id: p.id, title: p.title, subtitle: "Playlist • Você", info: `${p.tracks.length} músicas • 1 hora`,
-    description: "Uma seleção para acompanhar o seu dia.", artists: [], thumb: p.thumb!, playlistId: p.id.slice(2), tracks: p.tracks,
+    description: "Uma seleção para acompanhar o seu dia.", artists: [], thumb: p.thumb!, playlistId: p.id.slice(2), tracks: p.tracks, editable: true,
   };
 }
 
@@ -156,7 +157,7 @@ export async function call(method: string, args: any = {}): Promise<unknown> {
         { title: "Artistas", items: ar },
       ].filter((s) => s.items.length));
     }
-    case "librarySongs": return wait(signedIn ? allTracks.slice(0, 60) : []);
+    case "librarySongs": return wait(signedIn ? allTracks.filter((t) => likedIds.has(t.videoId)) : []);
     case "libraryAlbums": return wait(signedIn ? albums.map(({ tracks, ...a }) => a) : []);
     case "libraryArtists": return wait(signedIn ? artistItems : []);
     case "libraryPlaylists": return wait(signedIn ? playlists.map(({ tracks, ...p }) => p) : []);
@@ -176,6 +177,27 @@ export async function call(method: string, args: any = {}): Promise<unknown> {
       if (p && t) p.tracks = args.add ? [...p.tracks, t] : p.tracks.filter((x) => x.videoId !== t.videoId);
       return wait(true, 250);
     }
+    case "createPlaylist": {
+      const title = String(args.title ?? "").trim();
+      if (!title) throw new Error("Dê um nome para a playlist");
+      const id = `PLnew${Date.now()}`;
+      const tracks = (args.videoIds ?? []).map((v: string) => allTracks.find((t) => t.videoId === v)).filter(Boolean);
+      playlists = [{ kind: "playlist", id: "VL" + id, title, subtitle: "Playlist • Você", thumb: cover(title), tracks }, ...playlists];
+      return wait({ playlistId: id, title }, 300);
+    }
+    case "renamePlaylist": {
+      const p = playlists.find((x) => x.id.slice(2) === args.playlistId);
+      if (p) p.title = String(args.title).trim();
+      return wait(true, 200);
+    }
+    case "deletePlaylist":
+      playlists = playlists.filter((x) => x.id.slice(2) !== args.playlistId);
+      return wait(true, 250);
+    case "rate":
+      if (args.like) likedIds.add(args.videoId);
+      else likedIds.delete(args.videoId);
+      if (state.videoId === args.videoId) { state.liked = !!args.like; setTimeout(emit, 100); }
+      return wait(true, 200);
     case "queueChips": return wait(["Tudo", "Conhecidas", "Em alta", "Descobrir"].map((label, index) => ({ index, label, selected: index === chip })), 40);
   }
   throw new Error(`mock: ${method}`);
@@ -188,7 +210,11 @@ export function cmd(name: string, arg: any) {
     case "prev": qi = (qi - 1 + queue.length) % queue.length; load(queue[qi]); return;
     case "seek": state.time = Number(arg); break;
     case "volume": state.volume = Number(arg); state.muted = state.volume === 0; break;
-    case "like": state.liked = !state.liked; break;
+    case "like":
+      state.liked = !state.liked;
+      if (state.liked) likedIds.add(state.videoId);
+      else likedIds.delete(state.videoId);
+      break;
     case "repeatOne": state.repeat = arg ? "ONE" : "NONE"; break;
     case "shuffle": queue = [...queue.slice(0, qi + 1), ...queue.slice(qi + 1).sort(() => rnd() - 0.5)]; break;
     case "selectQueueChip": {

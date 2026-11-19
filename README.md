@@ -98,7 +98,10 @@ Atalhos: `Espaço` tocar/pausar · `Ctrl+←/→` anterior/próxima · `Ctrl+F` 
   "descola" e suas playlists aparecem no topo, das que você usou por último para as
   mais antigas. **Arraste e solte** numa playlist para adicionar. `Esc` cancela.
 - **Botão direito** numa música: lista das suas playlists com ✓ onde ela já está —
-  clique para adicionar ou remover.
+  clique para adicionar ou remover. O ♥ no topo do menu curte/descurte a música.
+- **Nova playlist**: botão "Nova" em Playlists, "Nova playlist…" no botão direito ou
+  soltando a música no bloco "+" ao arrastar (já cria com a música).
+- Nas suas playlists aparecem **Renomear** e **Excluir** ao lado de Tocar/Aleatório.
 
 <img src="docs/drag-to-playlist.png" width="720">
 
@@ -170,9 +173,35 @@ o original ao voltar para `music.youtube.com`. Se ainda assim for recusado, apar
 aviso com "Tentar de novo". Dá para trocar o UA usado no login em `login_user_agent`
 ou desligar o recurso com `login_ua_switch: false`.
 
+## Atualização automática
+
+O app verifica as [Releases](https://github.com/amaytu/YoutubeMusicDesk/releases) ao abrir
+e a cada 6 horas. Quando há versão nova aparece um aviso no canto: **Atualizar agora** baixa o
+instalador, roda em modo passivo (só a barra de progresso) e reabre o app já atualizado.
+Também dá para verificar em **Configurações → Atualizações**.
+
+## Atalhos de teclado
+
+| Tecla | Ação |
+| --- | --- |
+| `Espaço` | Tocar / pausar |
+| `Ctrl + →` / `Ctrl + ←` | Próxima / anterior |
+| `Ctrl + ↑` / `Ctrl + ↓` | Volume |
+| `M` | Sem som |
+| `L` | Curtir a música atual |
+| `Ctrl + F`, `Ctrl + K` ou `/` | Buscar |
+| `Ctrl + ,` | Configurações |
+| `Alt + ←` / botão voltar do mouse | Voltar |
+| `Esc` | Fechar o Tocando agora |
+
 ## Configurações
 
-As opções do menu da bandeja são salvas em
+Pelo ícone de conta → **Configurações** (ou `Ctrl + ,`): iniciar com o Windows, fechar
+para a bandeja, modo economia, teclas de mídia, ilha dinâmica, efeitos de vidro, tradução
+das letras (com chave opcional do DeepL), atualizações e conta. O menu da bandeja tem os
+mesmos interruptores e os dois ficam sempre sincronizados.
+
+As opções são salvas em
 `%APPDATA%\com.amaytu.youtubemusicdesk\settings.json`:
 
 ```json
@@ -237,13 +266,14 @@ src-tauri/
 
 ## Roadmap
 
+- [x] Criar, renomear e excluir playlists; adicionar/remover músicas
+- [x] Cor de destaque extraída da capa
+- [x] Atualização automática
+- [x] Tela de Configurações e atalhos de teclado
 - [ ] Mini player compacto sempre no topo
-- [ ] Adicionar à fila / tocar a seguir, criar e editar playlists
-- [ ] Cor de destaque extraída da capa
-- [ ] Discord Rich Presence ("Ouvindo ...")
-- [ ] Integração com SMTC (overlay de mídia do Windows e tela de bloqueio)
-- [ ] Atalhos configuráveis
-- [ ] Atualização automática (tauri-plugin-updater)
+- [ ] Adicionar à fila / tocar a seguir
+- [ ] Histórico, timer de sono
+- [ ] Discord Rich Presence ("Ouvindo ...") e scrobble no Last.fm
 
 ## Licença
 

@@ -3,7 +3,13 @@
 import { flushSync } from "svelte";
 import { dnd } from "./dnd.svelte";
 
-type VTDoc = Document & { startViewTransition?: (cb: () => void | Promise<void>) => { finished: Promise<void> } };
+type VTDoc = Document & {
+  startViewTransition?: (cb: () => void | Promise<void>) => {
+    finished: Promise<void>;
+    ready?: Promise<void>;
+    updateCallbackDone?: Promise<void>;
+  };
+};
 
 const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -17,7 +23,11 @@ export function vt(update: () => void): Promise<void> {
     update();
     return Promise.resolve();
   }
-  return d.startViewTransition(() => flushSync(update)).finished.catch(() => {});
+  const t = d.startViewTransition(() => flushSync(update));
+  // Uma transição nova cancela a anterior (cliques rápidos): não é erro.
+  t.ready?.catch(() => {});
+  t.updateCallbackDone?.catch(() => {});
+  return t.finished.catch(() => {});
 }
 
 /** Dá um view-transition-name temporário ao elemento (para o morph da capa). */

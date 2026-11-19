@@ -20,6 +20,11 @@
   import Playlists from "./views/Playlists.svelte";
   import Search from "./views/Search.svelte";
   import Songs from "./views/Songs.svelte";
+  import Settings from "./views/Settings.svelte";
+  import Dialog from "./components/Dialog.svelte";
+  import UpdateBanner from "./components/UpdateBanner.svelte";
+  import { dialog } from "./lib/dialog.svelte";
+  import "./lib/updates.svelte";
 
   const r = $derived(router.current);
   $effect(() => {
@@ -29,9 +34,18 @@
   // Atalhos globais (fora de campos de texto).
   function onKey(e: KeyboardEvent) {
     const typing = (e.target as HTMLElement)?.matches?.("input, select, textarea");
+    if (dialog.req) return;
     if (e.altKey && e.key === "ArrowLeft") {
       e.preventDefault();
       router.back();
+    } else if (e.ctrlKey && (e.key === "f" || e.key === "F" || e.key === "k" || e.key === "K")) {
+      e.preventDefault();
+      if (player.nowPlaying) player.openNow(null);
+      window.dispatchEvent(new Event("ymd:search"));
+    } else if (e.ctrlKey && e.key === ",") {
+      e.preventDefault();
+      if (player.nowPlaying) player.openNow(null);
+      router.go({ name: "settings" });
     } else if (typing) {
       return;
     } else if (e.key === "Escape") {
@@ -40,6 +54,14 @@
     } else if (e.code === "Space") {
       e.preventDefault();
       player.toggle();
+    } else if (e.ctrlKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+      e.preventDefault();
+      const v = player.state.muted ? 0 : player.state.volume;
+      player.setVolume(Math.max(0, Math.min(100, v + (e.key === "ArrowUp" ? 5 : -5))));
+    } else if (!e.ctrlKey && !e.altKey && !e.metaKey && (e.key === "m" || e.key === "M")) {
+      player.toggleMute();
+    } else if (!e.ctrlKey && !e.altKey && !e.metaKey && (e.key === "l" || e.key === "L")) {
+      if (player.hasTrack) player.like();
     } else if (e.ctrlKey && e.key === "ArrowRight") {
       player.next();
     } else if (e.ctrlKey && e.key === "ArrowLeft") {
@@ -75,6 +97,7 @@
         {:else if r.name === "artists"}<Artists />
         {:else if r.name === "playlists"}<Playlists />
         {:else if r.name === "search"}<Search q={r.q} />
+        {:else if r.name === "settings"}<Settings />
         {:else if r.name === "artist"}<Artist id={r.id} hint={r} />
         {:else if r.name === "collection"}<Collection id={r.id} hint={r} />
         {/if}
@@ -88,6 +111,8 @@
   <DragLayer />
   <TrackMenu />
   <Toast />
+  <UpdateBanner />
+  <Dialog />
 </div>
 
 <style>

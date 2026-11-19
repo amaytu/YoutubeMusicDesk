@@ -1,0 +1,16 @@
+{
+ "tag_name": "v0.7.1",
+ "body": "## Download\n- **Instalador recomendado:** `YouTube.Music.Desk_0.7.1_x64-setup.exe`\n  (instala só para o seu usuário, sem pedir administrador)\n- Alternativa: `YouTube.Music.Desk_0.7.1_x64_pt-BR.msi`\n\nO instalador ainda não é assinado: na primeira execução o Windows SmartScreen pode avisar.\nClique em ",
+ "assets": [
+  {
+   "name": "YouTube.Music.Desk_0.7.1_x64-setup.exe",
+   "size": 2403652,
+   "browser_download_url": "https://github.com/amaytu/YoutubeMusicDesk/releases/download/v0.7.1/YouTube.Music.Desk_0.7.1_x64-setup.exe"
+  },
+  {
+   "name": "YouTube.Music.Desk_0.7.1_x64_pt-BR.msi",
+   "size": 3645440,
+   "browser_download_url": "https://github.com/amaytu/YoutubeMusicDesk/releases/download/v0.7.1/YouTube.Music.Desk_0.7.1_x64_pt-BR.msi"
+  }
+ ]
+}

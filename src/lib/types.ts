@@ -60,6 +60,8 @@ export interface Collection {
   year?: string;
   thumb: string;
   playlistId?: string;
+  /** Playlist do próprio usuário (pode renomear/excluir). */
+  editable?: boolean;
   tracks: Track[];
 }
 

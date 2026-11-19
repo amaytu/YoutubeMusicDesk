@@ -44,18 +44,24 @@
     const off = win.onResized((m) => (maximized = m));
     const ro = new ResizeObserver(() => measure());
     if (pill) ro.observe(pill);
+    const focus = () => {
+      searchEl.focus();
+      searchEl.select();
+    };
+    // Ctrl+F / Ctrl+K vêm do App (evento); "/" fora de campos de texto também busca.
     const onKey = (e: KeyboardEvent) => {
-      const typing = (e.target as HTMLElement)?.tagName === "INPUT";
-      if ((e.ctrlKey && e.key.toLowerCase() === "f") || (e.key === "/" && !typing)) {
+      const typing = (e.target as HTMLElement)?.matches?.("input, textarea, select");
+      if (e.key === "/" && !typing && !e.ctrlKey) {
         e.preventDefault();
-        searchEl.focus();
-        searchEl.select();
+        focus();
       }
     };
     window.addEventListener("keydown", onKey);
+    window.addEventListener("ymd:search", focus);
     return () => {
       ro.disconnect();
       window.removeEventListener("keydown", onKey);
+      window.removeEventListener("ymd:search", focus);
       off?.then((f) => f?.());
     };
   });
@@ -119,6 +125,7 @@
             <button onclick={() => ((menuOpen = false), player.login())}><Icon name="google" size={16} /> Entrar com Google</button>
           {/if}
           <hr />
+          <button onclick={() => ((menuOpen = false), player.openNow(null), router.go({ name: "settings" }))}><Icon name="settings" size={16} /> Configurações</button>
           <button class="toggle" onclick={() => appearance.toggleGlass()} role="switch" aria-checked={appearance.glass}>
             <Icon name="sparkle" size={16} />
             <span>Efeitos de vidro</span>

@@ -71,7 +71,77 @@ export const api = {
   editPlaylist: (playlistId: string, videoId: string, add: boolean) =>
     call<boolean>("editPlaylist", { playlistId, videoId, add }),
   queueChips: () => call<{ index: number; label: string; selected: boolean }[]>("queueChips"),
+  createPlaylist: (title: string, videoIds: string[] = [], privacy: "PRIVATE" | "UNLISTED" | "PUBLIC" = "PRIVATE") =>
+    call<{ playlistId: string; title: string }>("createPlaylist", { title, videoIds, privacy }),
+  renamePlaylist: (playlistId: string, title: string) => call<boolean>("renamePlaylist", { playlistId, title }),
+  deletePlaylist: (playlistId: string) => call<boolean>("deletePlaylist", { playlistId }),
+  rate: (videoId: string, like: boolean) => call<boolean>("rate", { videoId, like }),
 };
+
+// ------------------------------------------------------------------ configurações
+
+export interface Prefs {
+  autostart: boolean;
+  closeToTray: boolean;
+  economy: boolean;
+  mediaKeys: boolean;
+  island: boolean;
+  deepl: boolean;
+  version: string;
+}
+
+let mockPrefs: Prefs = { autostart: false, closeToTray: true, economy: true, mediaKeys: true, island: true, deepl: false, version: "demo" };
+
+export async function getPrefs(): Promise<Prefs> {
+  if (!IS_TAURI) return { ...mockPrefs };
+  return invoke<Prefs>("get_prefs");
+}
+
+export async function setPref(key: string, value: unknown): Promise<Prefs> {
+  if (!IS_TAURI) {
+    if (key === "deeplKey") mockPrefs = { ...mockPrefs, deepl: !!String(value ?? "").trim() };
+    else mockPrefs = { ...mockPrefs, [key]: value };
+    return { ...mockPrefs };
+  }
+  return invoke<Prefs>("set_pref", { key, value });
+}
+
+// ------------------------------------------------------------------ atualizações
+
+export interface Update {
+  version: string;
+  notes: string;
+  url: string;
+  size: number;
+}
+
+export async function checkUpdate(): Promise<Update | null> {
+  if (!IS_TAURI) {
+    // demo: ?update na URL simula uma versão nova
+    return new URLSearchParams(location.search).has("update")
+      ? { version: "1.0.1", notes: "Correções e melhorias.", url: "", size: 2_400_000 }
+      : null;
+  }
+  return invoke<Update | null>("check_update");
+}
+
+/** Baixa e instala (o app fecha e reabre). onProgress recebe 0..1. */
+export async function installUpdate(u: Update, onProgress: (p: number) => void): Promise<void> {
+  if (!IS_TAURI) {
+    for (let p = 0; p <= 1; p += 0.1) {
+      onProgress(p);
+      await new Promise((r) => setTimeout(r, 120));
+    }
+    throw new Error("Demonstração: nada para instalar");
+  }
+  const { listen } = await import("@tauri-apps/api/event");
+  const off = await listen<number>("update-progress", (e) => onProgress(e.payload));
+  try {
+    await invoke("install_update", { url: u.url });
+  } finally {
+    off();
+  }
+}
 
 /** Comandos de reprodução (sem resposta). */
 export async function playerCmd(name: string, arg?: unknown) {

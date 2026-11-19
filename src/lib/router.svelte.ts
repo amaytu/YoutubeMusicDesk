@@ -15,6 +15,7 @@ export type Route =
   | { name: "artists" }
   | { name: "playlists" }
   | { name: "search"; q: string }
+  | { name: "settings" }
   | ({ name: "artist"; id: string } & Hint)
   | ({ name: "collection"; id: string } & Hint);
 
