@@ -25,6 +25,58 @@
   });
 
   const NEW = "__new__";
+
+  // Muitas playlists: aproximar o mouse das bordas da faixa rola para o lado.
+  const EDGE = 90; // px de cada borda que ativam a rolagem
+  const MAX_SPEED = 22; // px por quadro no extremo
+  let row = $state<HTMLDivElement>();
+  let canLeft = $state(false);
+  let canRight = $state(false);
+  let scrolling = $state<"left" | "right" | null>(null);
+
+  function updateEdges() {
+    if (!row) return;
+    canLeft = row.scrollLeft > 2;
+    canRight = row.scrollLeft + row.clientWidth < row.scrollWidth - 2;
+  }
+
+  $effect(() => {
+    if (!dnd.active || !row) return;
+    const el = row;
+    let raf = 0;
+    const tick = () => {
+      raf = requestAnimationFrame(tick);
+      const r = el.getBoundingClientRect();
+      // só perto da faixa (um pouco acima/abaixo também conta)
+      const nearY = dnd.y >= r.top - 40 && dnd.y <= r.bottom + 60;
+      let v = 0;
+      if (nearY) {
+        if (dnd.x < r.left + EDGE) v = -Math.min(1, (r.left + EDGE - dnd.x) / EDGE);
+        else if (dnd.x > r.right - EDGE) v = Math.min(1, (dnd.x - (r.right - EDGE)) / EDGE);
+      }
+      const before = el.scrollLeft;
+      if (v) el.scrollLeft += Math.sign(v) * Math.max(3, Math.abs(v) ** 1.6 * MAX_SPEED);
+      const moved = el.scrollLeft !== before;
+      scrolling = moved ? (v < 0 ? "left" : "right") : null;
+      if (moved) {
+        updateEdges();
+        // o cursor ficou parado mas a playlist embaixo dele mudou
+        dnd.move(dnd.x, dnd.y);
+      }
+    };
+    updateEdges();
+    raf = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(raf);
+      scrolling = null;
+    };
+  });
+
+  // lista carregou: recalcula as setas
+  $effect(() => {
+    targets;
+    requestAnimationFrame(updateEdges);
+  });
   dnd.onDrop = async (track, id) => {
     if (id === NEW) {
       const name = await dialog.prompt("Nova playlist", { placeholder: "Nome da playlist", confirm: "Criar e adicionar" });
@@ -39,7 +91,21 @@
 {#if dnd.active && dnd.track}
   <div class="bar glass" transition:fly={{ y: -40, duration: 380, easing: backOut }}>
     <div class="hint">Solte numa playlist para adicionar</div>
-    <div class="targets">
+    <div class="rail">
+    {#if canLeft}<div class="edge left" class:active={scrolling === "left"}><Icon name="back" size={18} /></div>{/if}
+    {#if canRight}<div class="edge right" class:active={scrolling === "right"}><Icon name="chevron" size={18} /></div>{/if}
+    <div
+      class="targets"
+      bind:this={row}
+      onscroll={updateEdges}
+      onwheel={(e) => {
+        // roda do mouse também rola a faixa para os lados
+        if (!row || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+        e.preventDefault();
+        row.scrollLeft += e.deltaY;
+        dnd.move(dnd.x, dnd.y);
+      }}
+    >
       {#if failed}
         <p class="msg">Não foi possível carregar suas playlists.</p>
       {:else if targets === null}
@@ -49,20 +115,21 @@
           <div class="art plus"><Icon name="plus" size={26} /></div>
           <span class="name">Nova playlist</span>
         </div>
-        {#each targets.slice(0, 7) as t, i (t.playlistId)}
+        {#each targets as t, i (t.playlistId)}
           <div
             class="target"
             class:over={dnd.overId === t.playlistId}
             class:has={t.contains}
             data-drop-id={t.playlistId}
-            in:fly={{ y: -12, duration: 320, delay: i * 30, easing: backOut }}
+            in:fly={{ y: -12, duration: 320, delay: Math.min(i, 8) * 30, easing: backOut }}
           >
-            <div class="art"><Cover src={t.thumb} size={120} icon="playlist" eager /></div>
+            <div class="art"><Cover src={t.thumb} size={120} icon="playlist" eager={i < 10} /></div>
             <span class="name">{t.title}</span>
             {#if t.contains}<span class="tag"><Icon name="check" size={12} /> Já está</span>{/if}
           </div>
         {/each}
       {/if}
+    </div>
     </div>
   </div>
 
@@ -112,11 +179,60 @@
     color: var(--muted);
     margin: 0 4px 10px;
   }
+  .rail {
+    position: relative;
+  }
   .targets {
     display: flex;
     gap: 10px;
     overflow-x: auto;
     scrollbar-width: none;
+    /* espaço para o destaque (escala) não ser cortado */
+    padding: 6px 4px;
+    margin: -6px -4px;
+  }
+  .targets::-webkit-scrollbar {
+    display: none;
+  }
+  /* bordas: indicam que há mais playlists e onde parar o mouse para rolar */
+  .edge {
+    position: absolute;
+    top: -6px;
+    bottom: -6px;
+    width: 64px;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    pointer-events: none;
+    color: rgba(255, 255, 255, 0.75);
+    transition: color 0.2s;
+  }
+  .edge.left {
+    left: -4px;
+    justify-content: flex-start;
+    padding-left: 2px;
+    background: linear-gradient(90deg, rgba(20, 20, 28, 0.95), rgba(20, 20, 28, 0));
+    border-radius: 14px 0 0 14px;
+  }
+  .edge.right {
+    right: -4px;
+    justify-content: flex-end;
+    padding-right: 2px;
+    background: linear-gradient(270deg, rgba(20, 20, 28, 0.95), rgba(20, 20, 28, 0));
+    border-radius: 0 14px 14px 0;
+  }
+  .edge :global(svg) {
+    padding: 6px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    transition: transform 0.25s var(--spring), background 0.2s;
+  }
+  .edge.active {
+    color: #fff;
+  }
+  .edge.active :global(svg) {
+    background: var(--dyn-strong, var(--accent));
+    transform: scale(1.15);
   }
   .target {
     position: relative;

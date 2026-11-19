@@ -62,7 +62,10 @@ ARTISTS.forEach((artist, ai) => {
 const allTracks = albums.flatMap((a) => a.tracks);
 const likedIds = new Set(allTracks.slice(0, 60).map((t) => t.videoId));
 
-let playlists: (PlaylistItem & { tracks: Track[] })[] = ["Foco total", "Treino", "Chuva lá fora", "Road trip", "Anos 2010", "Descobertas da semana"].map((t, i) => ({
+const MANY = typeof location !== "undefined" && new URLSearchParams(location.search).has("many");
+const PL_NAMES = ["Foco total", "Treino", "Chuva lá fora", "Road trip", "Anos 2010", "Descobertas da semana"];
+if (MANY) for (let i = 1; i <= 24; i++) PL_NAMES.push(`Mix pessoal ${i}`);
+let playlists: (PlaylistItem & { tracks: Track[] })[] = PL_NAMES.map((t, i) => ({
   kind: "playlist", id: `VLPLmock${i}`, title: t, subtitle: `Playlist • ${20 + i * 7} músicas`, thumb: cover(t),
   tracks: Array.from({ length: 20 + i * 3 }, () => pick(allTracks)),
 }));

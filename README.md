@@ -97,6 +97,8 @@ Atalhos: `Espaço` tocar/pausar · `Ctrl+←/→` anterior/próxima · `Ctrl+F` 
 - **Segure** qualquer música (listas, fila, "A seguir", Início, player) por ~0,3 s: ela
   "descola" e suas playlists aparecem no topo, das que você usou por último para as
   mais antigas. **Arraste e solte** numa playlist para adicionar. `Esc` cancela.
+  Com muitas playlists, encoste o mouse na borda esquerda/direita da faixa (ou use a
+  roda do mouse) para ela deslizar para o lado.
 - **Botão direito** numa música: lista das suas playlists com ✓ onde ela já está —
   clique para adicionar ou remover. O ♥ no topo do menu curte/descurte a música.
 - **Nova playlist**: botão "Nova" em Playlists, "Nova playlist…" no botão direito ou
