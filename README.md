@@ -1,188 +1,60 @@
-<img src="docs/logo.png" width="120" align="right">
+<img src="docs/logo.png" width="110" align="right">
 
 # YouTube Music Desk
 
-Cliente desktop leve para o **YouTube Music** no Windows, feito em **Rust + Tauri v2**.
-Inspirado no [spotifast](https://github.com/crmne/spotifast): foco em inicialização rápida,
-pouca RAM e quase nenhum uso de CPU em segundo plano.
+Cliente desktop leve para o **YouTube Music** no Windows, feito com Rust + Tauri.
+Abre rápido, usa pouca memória e quase nenhuma CPU em segundo plano.
 
-> Projeto não oficial, sem vínculo com o Google/YouTube. Usa o site oficial
-> `music.youtube.com` — nada de API não documentada ou extração de streams.
+> Projeto pessoal e não oficial, sem vínculo com o Google/YouTube. A reprodução usa o
+> próprio `music.youtube.com`, com a sua conta.
 
-| Álbuns | Artista | Tocando agora |
-|---|---|---|
-| ![](docs/albums.png) | ![](docs/artist.png) | ![](docs/now-playing.png) |
-
-<sub>Capturas com dados de demonstração (`npm run dev`).</sub>
-
-## Por que Tauri e não nativo como o spotifast?
-
-O spotifast toca áudio nativamente via `librespot` porque o Spotify tem API de playback.
-O YouTube Music não tem; um player nativo dependeria de engenharia reversa (quebra
-com frequência e viola os termos). A alternativa mais leve e estável é o **WebView2**,
-que já vem no Windows 10/11 e é compartilhado com o Edge — diferente do Electron,
-que embute um Chromium inteiro por app.
-
-| | Electron (ex.: th-ch/youtube-music) | YouTube Music Desk |
-|---|---|---|
-| Instalador | ~90 MB | ~3–5 MB |
-| Processo host | ~80–150 MB | ~5–15 MB |
-| Engine | Chromium embutido | WebView2 do sistema |
-
-## Arquitetura
-
-```
-┌──────────────── janela "main" ────────────────┐      ┌──── janela "player" (oculta) ────┐
-│ Interface própria (Svelte 5 + Vite)           │      │ music.youtube.com oficial        │
-│ início, busca, biblioteca, artista, tocando   │◄────►│ toca o áudio + bridge.js         │
-└───────────────────────────────────────────────┘ Rust └──────────────────────────────────┘
-        invoke("ytm") ─► eval(__ymd.call) ─► API interna da página (/youtubei/v1)
-        listen("ytm") ◄─ bridge_event (estado do player só quando muda)
-```
-
-- A **UI** é nossa: leve (≈110 KB de JS), fluida, com fundo desfocado da capa atual.
-- O **áudio** continua vindo do player oficial do YouTube Music, numa janela oculta.
-- Os **dados** (início, biblioteca, álbuns, artistas, letras) vêm da API interna que a
-  própria página usa, com a sua sessão. Ela não é documentada: se o YouTube mudar o
-  formato, os parsers em `src-tauri/src/bridge.js` precisam de ajuste.
-- **Segurança**: a página do YouTube só pode chamar `bridge_reply`/`bridge_event`
-  (ACL do Tauri em `capabilities/player.json`); a UI não acessa a página diretamente.
-
-## Telas
-
-- **Início**: escolhas rápidas e prateleiras de recomendações.
-- **Busca**: melhor resultado, músicas, álbuns, artistas.
-- **Biblioteca**: Músicas (lista com filtro/ordenação), Álbuns e Playlists (grade +
-  painel lateral de faixas), Artistas.
-- **Artista**: discografia | faixas do álbum selecionado | artistas semelhantes e info.
-- **Tocando agora**: capa em tela cheia ao fundo, controles na metade esquerda e painel
-  com **Fila**, **A seguir** (filtros Tudo / Conhecidas / Em alta / Descobrir do mix automático) e **Letra**.
-  Abre sempre com a fila.
-- **Responsivo**: a janela pode ficar do tamanho de um celular (mín. 360×560) — abas vão
-  para uma barra inferior e o player vira um mini player.
-- Prateleiras do Início podem ser **arrastadas com o mouse** para os lados (com inércia).
-
-<img src="docs/mobile.png" width="900">
-
-Atalhos: `Espaço` tocar/pausar · `Ctrl+←/→` anterior/próxima · `Ctrl+F` ou `/` busca ·
-`Alt+←` voltar · `Esc` fecha o "tocando agora".
-
-## Design "liquid glass"
-
-- **Material de vidro** (`.glass` em `src/app.css`): desfoque leve + refração SVG
-  (`#lg-refract`, em `App.svelte`) + saturação, borda iluminada e brilho especular que
-  segue o ponteiro (`use:sheen`).
-- **Elementos flutuantes**: abas em cápsula com indicador "líquido" que desliza e estica;
-  player em cápsula com o conteúdo rolando por baixo.
-- **Transições** (View Transitions do WebView2): a página entra com fade + desfoque, a
-  capa "voa" do card até a página do álbum/artista e da barra do player até o
-  "Tocando agora".
-- **Hover**: cards inclinam em 3D seguindo o mouse, botões com mola e reflexo,
-  ícones com bolha de vidro, play em orbe com pulso enquanto toca.
-- **Efeitos de vidro** pode ser desligado no menu da conta (PCs mais fracos);
-  `prefers-reduced-motion` do Windows desliga as animações.
-
-## Desempenho
-
-- Dois webviews compartilham um único processo de navegador WebView2.
-- Player oculto não renderiza nada; a UI só recebe eventos quando o estado muda
-  (tempo de reprodução é interpolado localmente, sem tráfego por segundo).
-- Miniaturas pedidas no tamanho exato; imagens `lazy`; listas longas renderizadas
-  aos poucos com `content-visibility`.
-- Modo economia em segundo plano (memória baixa do WebView2 + EcoQoS), bandeja,
-  teclas de mídia globais, instância única e iniciar com o Windows.
-
-## Playlists: arrastar e botão direito
-
-- **Segure** qualquer música (listas, fila, "A seguir", Início, player) por ~0,3 s: ela
-  "descola" e suas playlists aparecem no topo, das que você usou por último para as
-  mais antigas. **Arraste e solte** numa playlist para adicionar. `Esc` cancela.
-  Com muitas playlists, encoste o mouse na borda esquerda/direita da faixa (ou use a
-  roda do mouse) para ela deslizar para o lado.
-- **Botão direito** numa música: lista das suas playlists com ✓ onde ela já está —
-  clique para adicionar ou remover. O ♥ no topo do menu curte/descurte a música.
-- **Nova playlist**: botão "Nova" em Playlists, "Nova playlist…" no botão direito ou
-  soltando a música no bloco "+" ao arrastar (já cria com a música).
-- Nas suas playlists aparecem **Renomear** e **Excluir** ao lado de Tocar/Aleatório.
-
-<img src="docs/drag-to-playlist.png" width="720">
-
-## Cor que acompanha a capa
-
-A tradução da letra, o selo "Sincronizada" e as barras de tempo usam uma cor tirada da
-capa da música, clareada até ter contraste de leitura (≥ 4,5:1), com transição suave.
-
-## Letra sincronizada e tradução
-
-- Fontes, em ordem: letra **com tempo do próprio YouTube Music** (a mesma faixa que
-  está tocando), **LRCLIB** (só versões com a mesma duração, ±2 s) e, sem nenhuma das
-  duas, a letra distribuída ao longo da música (marcada como **Aproximada**).
-- Em **Tocando agora → Letra**, a linha atual fica em destaque e a rolagem acompanha a
-  música. Rolou com o mouse? O acompanhamento pausa e volta sozinho (ou em
-  "Seguir a música"). Clique numa linha para pular até ela.
-- **Traduzir**: mostra a tradução em português embaixo de cada linha — também na ilha
-  dinâmica. A preferência vale para o app e a ilha.
-- A tradução usa o Google Tradutor (endpoint público, não oficial, sem chave). Para usar
-  a API oficial do **DeepL** (plano Free: 500 mil caracteres/mês), coloque sua chave em
-  `deepl_api_key` no `settings.json`.
-
-<img src="docs/lyrics.png" width="720">
-
-## Ilha dinâmica
-
-Quando o app vai para a bandeja ou é minimizado, uma pílula aparece no topo da tela:
-
-- **Compacta**: capa girando + a **letra original** em sincronia com a música, inteira
-  (quebra em até 3 linhas; título — artista quando não há letra).
-- **Mouse por cima**: abre com título, artista, linha atual/próxima da letra,
-  anterior / tocar-pausar / próxima e progresso. Clique na capa para voltar ao app.
-- **Botão direito**: recolhe num traço discreto no topo; **clique** nele para voltar.
-- Não rouba o foco, não bloqueia cliques fora da pílula e some sozinha em jogos,
-  vídeos e apresentações em tela cheia.
-- Letras sincronizadas vêm do [LRCLIB](https://lrclib.net) (título/artista da faixa são
-  enviados para lá); sem resultado, usa a letra do YouTube Music distribuída ao longo da música.
-- Liga/desliga em **Bandeja → Ilha dinâmica em segundo plano**.
-
-<img src="docs/island-compact.png" width="360"> <img src="docs/island-open.png" width="360">
+![Início](docs/screenshots/inicio.jpg)
 
 ## Download
 
-Instalador personalizado com o visual do app (tema escuro, logo e destaque vermelho).
+Baixe o instalador `*_x64-setup.exe` em
+[Releases](https://github.com/amaytu/YoutubeMusicDesk/releases/latest).
+Depois de instalado, o app avisa quando houver versão nova e se atualiza sozinho.
 
-<img src="docs/installer.png" width="344">
-
-
-Baixe o instalador em [Releases](https://github.com/amaytu/YoutubeMusicDesk/releases/latest)
-(`*_x64-setup.exe`). Ainda não é assinado: se o SmartScreen avisar, use
+O instalador não é assinado: se o SmartScreen avisar, clique em
 **Mais informações → Executar assim mesmo**.
 
-## Login com o Google
+## Recursos
 
-Pensado para ser feito uma vez só, em poucos cliques:
+- **Interface própria** com Início, Músicas, Artistas, Álbuns, Playlists e busca;
+  responsiva até o tamanho de um celular.
+- **Tocando agora** com a capa em tela cheia, fila, "A seguir" (Tudo, Conhecidas,
+  Em alta, Descobrir) e letra.
+- **Letra sincronizada** e **tradução para português** linha a linha, seguindo a música.
+- **Playlists**: segure uma música e arraste até uma playlist; botão direito para
+  adicionar, remover ou curtir; criar, renomear e excluir playlists.
+- **Ilha dinâmica**: com o app em segundo plano, uma pílula no topo da tela mostra a
+  música e a letra; passe o mouse para ver os controles.
+- **Cores que acompanham a capa** da música tocando.
+- **Teclas de mídia**, ícone na bandeja, iniciar com o Windows e modo economia.
+- **Login com Google** em poucos cliques; a sessão fica salva.
 
-1. Na primeira abertura sem conta, aparece **"Entrar com Google"** — um clique abre uma
-   janela pequena direto na tela de login do Google.
-2. E-mail → senha (ou passkey/Windows Hello) → a janela fecha sozinha e a biblioteca carrega.
-3. A sessão fica salva no perfil do WebView2; nas próximas aberturas já entra logado.
+| Letra | Letra traduzida |
+|---|---|
+| ![](docs/screenshots/letra.jpg) | ![](docs/screenshots/letra-traduzida.jpg) |
 
-"Explorar sem conta" esconde o convite por 7 dias. A qualquer momento, pelo ícone de conta ou pela bandeja:
-**Entrar com Google / Trocar conta** ou **Sair da conta** (apaga cookies e dados do app).
+**Ilha dinâmica** (com o app em segundo plano)
 
-**Sobre o bloqueio do Google:** o Google recusa login em navegadores embutidos
-(WebView2 incluso) com a mensagem *"Este navegador ou app pode não ser seguro"*.
-Para contornar, o app troca o user agent **apenas nas páginas de login** e restaura
-o original ao voltar para `music.youtube.com`. Se ainda assim for recusado, aparece um
-aviso com "Tentar de novo". Dá para trocar o UA usado no login em `login_user_agent`
-ou desligar o recurso com `login_ua_switch: false`.
+| Compacta | Ao passar o mouse |
+|---|---|
+| ![](docs/screenshots/ilha.png) | ![](docs/screenshots/ilha-aberta.png) |
 
-## Atualização automática
+| Arrastar para uma playlist | Configurações |
+|---|---|
+| ![](docs/screenshots/arrastar-playlist.jpg) | ![](docs/screenshots/configuracoes.jpg) |
 
-O app verifica as [Releases](https://github.com/amaytu/YoutubeMusicDesk/releases) ao abrir
-e a cada 6 horas. Quando há versão nova aparece um aviso no canto: **Atualizar agora** baixa o
-instalador, roda em modo passivo (só a barra de progresso) e reabre o app já atualizado.
-Também dá para verificar em **Configurações → Atualizações**.
+**Janela pequena**
 
-## Atalhos de teclado
+| Início | A seguir | Letra | Configurações |
+|---|---|---|---|
+| ![](docs/screenshots/mobile-inicio.jpg) | ![](docs/screenshots/mobile-a-seguir.jpg) | ![](docs/screenshots/mobile-letra.jpg) | ![](docs/screenshots/mobile-configuracoes.jpg) |
+
+## Atalhos
 
 | Tecla | Ação |
 | --- | --- |
@@ -191,91 +63,31 @@ Também dá para verificar em **Configurações → Atualizações**.
 | `Ctrl + ↑` / `Ctrl + ↓` | Volume |
 | `M` | Sem som |
 | `L` | Curtir a música atual |
-| `Ctrl + F`, `Ctrl + K` ou `/` | Buscar |
+| `Ctrl + F` ou `/` | Buscar |
 | `Ctrl + ,` | Configurações |
-| `Alt + ←` / botão voltar do mouse | Voltar |
+| `Alt + ←` | Voltar |
 | `Esc` | Fechar o Tocando agora |
 
 ## Configurações
 
-Pelo ícone de conta → **Configurações** (ou `Ctrl + ,`): iniciar com o Windows, fechar
-para a bandeja, modo economia, teclas de mídia, ilha dinâmica, efeitos de vidro, tradução
-das letras (com chave opcional do DeepL), atualizações e conta. O menu da bandeja tem os
-mesmos interruptores e os dois ficam sempre sincronizados.
+Ficam no ícone de conta → **Configurações** (ou no menu da bandeja). São salvas em
+`%APPDATA%\com.amaytu.youtubemusicdesk\settings.json`. Para a tradução, o padrão é o
+Google Tradutor; com uma chave do DeepL, ele passa a ser usado.
 
-As opções são salvas em
-`%APPDATA%\com.amaytu.youtubemusicdesk\settings.json`:
+## Compilar
 
-```json
-{
-  "close_to_tray": true,
-  "economy_when_hidden": true,
-  "media_keys": true,
-  "user_agent": null,
-  "extra_browser_args": null,
-  "login_ua_switch": true,
-  "login_user_agent": null,
-  "island_enabled": true,
-  "deepl_api_key": null
-}
-```
-
-- `user_agent`: use se o login do Google disser que o navegador não é seguro.
-- `extra_browser_args`: flags extras do WebView2, por ex. `"--renderer-process-limit=1"`
-  para economizar ainda mais RAM (exige reiniciar o app).
-- Ligar/desligar `media_keys` vale na hora; a flag que desativa o tratamento de teclas
-  do próprio Chromium só muda ao reiniciar.
-
-## Build
-
-Pré-requisitos: [Rust](https://rustup.rs) (stable, MSVC), [Node.js 22](https://nodejs.org) e o
+Pré-requisitos: [Rust](https://rustup.rs), [Node.js 22](https://nodejs.org) e o
 [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
-com "Desenvolvimento para desktop com C++".
+(Desenvolvimento para desktop com C++).
 
 ```powershell
 npm install
 cargo install tauri-cli --version "^2" --locked
 
-cargo tauri dev     # app completo com hot reload da UI
-npm run dev         # só a UI no navegador, com dados de demonstração
+cargo tauri dev     # app completo
+npm run dev         # só a interface no navegador, com dados de demonstração
 cargo tauri build   # instaladores em src-tauri\target\release\bundle\
 ```
-
-O GitHub Actions (`.github/workflows/build.yml`) compila a cada push na `main` e
-publica um release ao criar uma tag `v*`.
-
-## Estrutura
-
-```
-src/                       interface (Svelte 5)
-  App.svelte               layout: barra superior, conteúdo, player, tocando agora
-  Island.svelte            ilha dinâmica (mesmo bundle, rota #island)
-  views/                   Home, Search, Songs, Albums, Artists, Playlists, Artist, Collection
-  components/              PlayerBar, NowPlaying, TitleBar, Card, Shelf, TrackList...
-  lib/api.ts               chamadas ao Rust (ou mock.ts no navegador) + cache
-  lib/player.svelte.ts     estado do player
-src-tauri/
-  src/bridge.js            roda na página do YT Music: API interna, parsers, player
-  src/bridge.rs            ponte UI <-> página (chamadas com id, eventos)
-  src/window.rs            janelas main/player, flags do WebView2
-  src/login.rs             login do Google (UA só no login)
-  src/island.rs            ilha dinâmica (janela transparente, área clicável, tela cheia)
-  src/lyrics.rs            letras sincronizadas via LRCLIB
-  src/translate.rs         tradução das letras (Google / DeepL)
-  src/tray.rs, media.rs, power.rs, settings.rs
-  capabilities/            ACL: o que cada janela pode chamar
-```
-
-## Roadmap
-
-- [x] Criar, renomear e excluir playlists; adicionar/remover músicas
-- [x] Cor de destaque extraída da capa
-- [x] Atualização automática
-- [x] Tela de Configurações e atalhos de teclado
-- [ ] Mini player compacto sempre no topo
-- [ ] Adicionar à fila / tocar a seguir
-- [ ] Histórico, timer de sono
-- [ ] Discord Rich Presence ("Ouvindo ...") e scrobble no Last.fm
 
 ## Licença
 
