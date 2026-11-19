@@ -8,6 +8,7 @@
   import { playlists } from "../lib/playlists.svelte";
   import { updates } from "../lib/updates.svelte";
   import Icon from "../components/Icon.svelte";
+  import { keepScroll } from "../lib/util";
 
   let prefs = $state<Prefs | null>(null);
   let busy = $state<string | null>(null);
@@ -57,8 +58,22 @@
   ];
 </script>
 
+<div class="page" use:keepScroll={"settings"}>
 <div class="settings">
-  <h1>Configurações</h1>
+  <div class="top">
+    <h1>Configurações</h1>
+    {#if updates.available}
+      <button class="btn primary" disabled={updates.progress !== null} onclick={() => updates.install()}>
+        <Icon name="download" size={14} />
+        {updates.progress !== null ? `Baixando ${Math.round(updates.progress * 100)}%` : `Atualizar para ${updates.available.version}`}
+      </button>
+    {:else}
+      <button class="btn" disabled={updates.checking} onclick={() => updates.check()}>
+        <Icon name="refresh" size={14} />
+        {updates.checking ? "Verificando…" : updates.upToDate ? "Está atualizado" : "Verificar atualizações"}
+      </button>
+    {/if}
+  </div>
 
   {#snippet toggle(on: boolean, label: string, hint: string, onclick: () => void, disabled = false)}
     <button class="row" role="switch" aria-checked={on} {disabled} {onclick}>
@@ -164,8 +179,21 @@
     </div>
   </section>
 </div>
+</div>
 
 <style>
+  .page {
+    height: 100%;
+    overflow-y: auto;
+    padding: 4px var(--gutter) var(--player-space);
+  }
+  .top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
   .settings {
     max-width: 760px;
     margin: 0 auto;

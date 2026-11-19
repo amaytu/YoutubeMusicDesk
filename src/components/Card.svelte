@@ -1,13 +1,12 @@
 <script lang="ts">
   // Card de vidro: inclina seguindo o ponteiro, brilho especular, capa com zoom
   // e "voo" da capa até a próxima tela ao clicar.
-  import { openItem, playItem, prefetch } from "../lib/actions";
+  import { openItem, prefetch } from "../lib/actions";
   import { songMenu } from "../lib/contextmenu.svelte";
   import { holdDrag } from "../lib/dnd.svelte";
   import { tilt } from "../lib/fx.svelte";
   import type { Item } from "../lib/types";
   import Cover from "./Cover.svelte";
-  import Icon from "./Icon.svelte";
 
   let {
     item,
@@ -45,9 +44,6 @@
       <div class="title ellipsis">{item.title}</div>
       {#if item.subtitle}<div class="sub ellipsis">{item.subtitle}</div>{/if}
     </div>
-  </button>
-  <button class="play" onclick={() => playItem(item)} title="Tocar" aria-label="Tocar {item.title}">
-    <Icon name="play" size={18} />
   </button>
 </div>
 
@@ -121,39 +117,5 @@
     margin-top: 2px;
     font-size: 12px;
     color: var(--muted);
-  }
-  .play {
-    position: absolute;
-    z-index: 2;
-    right: 18px;
-    top: calc(100cqw - 42px);
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    display: grid;
-    place-items: center;
-    color: #ffffff;
-    background: radial-gradient(circle at 35% 25%, #ff8f99, var(--accent) 60%, #c4001b);
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 10px 22px -6px rgba(0, 0, 0, 0.6);
-    opacity: 0;
-    transform: translateY(10px) scale(0.6);
-    transition:
-      opacity 0.2s,
-      transform 0.45s var(--spring),
-      box-shadow 0.2s;
-  }
-  .round .play {
-    display: none;
-  }
-  .card:hover .play {
-    opacity: 1;
-    transform: none;
-  }
-  .play:hover {
-    transform: scale(1.12) !important;
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 12px 28px -6px var(--accent-glow);
-  }
-  .play:active {
-    transform: scale(0.9) !important;
   }
 </style>

@@ -166,11 +166,27 @@
     inset: 0;
     display: grid;
     place-items: center;
-    background: rgba(0, 0, 0, 0.45);
+    /* mesmo vidro dos botões do app: leve escurecida + orbe de vidro */
+    background: rgba(0, 0, 0, 0.22);
     border-radius: 8px;
     opacity: 0;
     transform: scale(0.7);
     transition: opacity 0.2s, transform 0.4s var(--spring);
+  }
+  .ov :global(svg) {
+    width: 26px;
+    height: 26px;
+    padding: 6px;
+    box-sizing: border-box;
+    border-radius: 50%;
+    color: #fff;
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0.08));
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.5) inset,
+      0 0 0 1px rgba(255, 255, 255, 0.16) inset,
+      0 4px 10px -4px rgba(0, 0, 0, 0.6);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
   }
   .tile:hover .ov {
     opacity: 1;

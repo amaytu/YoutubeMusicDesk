@@ -253,7 +253,7 @@
     transform: scale(0.97);
   }
   .disc.sel {
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.3) inset, 0 0 0 1.5px var(--accent) inset, 0 8px 24px -8px var(--accent-glow);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.3) inset, 0 0 0 1.5px var(--dyn-strong, var(--accent)) inset, 0 8px 24px -10px var(--dyn-strong, var(--accent-glow));
   }
   .disc img {
     position: absolute;
