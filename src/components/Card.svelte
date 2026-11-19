@@ -79,10 +79,10 @@
     transform: perspective(700px) scale(0.97);
   }
   .card.selected {
-    background: linear-gradient(160deg, rgba(255, 45, 70, 0.24), rgba(255, 45, 70, 0.06));
+    background: linear-gradient(160deg, color-mix(in srgb, var(--accent) 24%, transparent), color-mix(in srgb, var(--accent) 6%, transparent));
     box-shadow:
       0 1px 0 rgba(255, 255, 255, 0.3) inset,
-      0 0 0 1px rgba(255, 45, 70, 0.55) inset,
+      0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent) inset,
       0 14px 34px -14px var(--accent-glow);
   }
   .hit {

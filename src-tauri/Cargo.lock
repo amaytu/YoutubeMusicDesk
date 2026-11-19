@@ -5329,7 +5329,7 @@ dependencies = [
 
 [[package]]
 name = "youtube-music-desk"
-version = "1.0.3"
+version = "1.0.4"
 dependencies = [
  "image",
  "serde",

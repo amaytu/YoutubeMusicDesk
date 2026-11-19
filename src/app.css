@@ -12,8 +12,8 @@
   --line: rgba(255, 255, 255, 0.1);
   --accent: #ff2d46;
   --accent-2: #ff8a3d;
-  --accent-soft: rgba(255, 45, 70, 0.16);
-  --accent-glow: rgba(255, 45, 70, 0.45);
+  --accent-soft: rgb(255 45 70 / 0.16);
+  --accent-glow: rgb(255 45 70 / 0.45);
 
   /* material de vidro */
   --glass-tint: rgba(255, 255, 255, 0.09);
@@ -71,11 +71,30 @@
   inherits: true;
   initial-value: rgb(255 45 70 / 0.16);
 }
+/* O destaque do app também segue a capa (sem música: vermelho padrão). */
+@property --accent {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #ff2d46;
+}
+@property --accent-soft {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: rgb(255 45 70 / 0.16);
+}
+@property --accent-glow {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: rgb(255 45 70 / 0.45);
+}
 :root {
   transition:
     --dyn 0.9s ease,
     --dyn-strong 0.9s ease,
-    --dyn-soft 0.9s ease;
+    --dyn-soft 0.9s ease,
+    --accent 0.9s ease,
+    --accent-soft 0.9s ease,
+    --accent-glow 0.9s ease;
 }
 
 html.solid {
@@ -359,8 +378,8 @@ html.dragging-track * {
   transition: box-shadow 0.2s, background 0.2s;
 }
 .field:focus-within {
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset, 0 0 0 1px rgba(255, 45, 70, 0.6) inset,
-    0 0 0 4px rgba(255, 45, 70, 0.12);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset, 0 0 0 1px color-mix(in srgb, var(--accent) 60%, transparent) inset,
+    0 0 0 4px color-mix(in srgb, var(--accent) 12%, transparent);
 }
 .field input,
 .field select {

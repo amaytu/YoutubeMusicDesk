@@ -146,8 +146,8 @@
     transform: scale(0.99);
   }
   .row.active {
-    background: linear-gradient(90deg, rgba(255, 45, 70, 0.22), rgba(255, 45, 70, 0.05));
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.16) inset, 0 0 0 1px rgba(255, 45, 70, 0.3) inset;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 22%, transparent), color-mix(in srgb, var(--accent) 5%, transparent));
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.16) inset, 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent) inset;
   }
   .row.active .title {
     color: var(--accent);

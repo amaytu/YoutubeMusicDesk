@@ -272,7 +272,7 @@
     transform: scale(1.06);
   }
   .disc.top {
-    background: linear-gradient(120deg, rgba(255, 45, 70, 0.35), rgba(124, 58, 237, 0.3));
+    background: linear-gradient(120deg, color-mix(in srgb, var(--accent) 35%, transparent), rgba(124, 58, 237, 0.3));
   }
   .disc-title,
   .disc-sub {

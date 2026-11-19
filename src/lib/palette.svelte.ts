@@ -74,7 +74,7 @@ class Palette {
   apply(rgb: [number, number, number] | null) {
     const root = document.documentElement.style;
     if (!rgb) {
-      for (const v of ["--dyn", "--dyn-strong", "--dyn-soft"]) root.removeProperty(v);
+      for (const v of ["--dyn", "--dyn-strong", "--dyn-soft", "--accent", "--accent-soft", "--accent-glow"]) root.removeProperty(v);
       return;
     }
     let [h, s, l] = rgbToHsl(...rgb);
@@ -86,6 +86,10 @@ class Palette {
     root.setProperty("--dyn", css(text));
     root.setProperty("--dyn-strong", css(strong));
     root.setProperty("--dyn-soft", css(strong, 0.18));
+    // Destaques do app (aba ativa, interruptores, ícones ligados, música tocando)
+    root.setProperty("--accent", css(text));
+    root.setProperty("--accent-soft", css(strong, 0.16));
+    root.setProperty("--accent-glow", css(strong, 0.45));
   }
 }
 

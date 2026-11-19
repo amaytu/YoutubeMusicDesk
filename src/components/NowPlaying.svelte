@@ -534,7 +534,7 @@
     background: rgba(255, 255, 255, 0.12);
   }
   .heart.on {
-    color: #ff5c8a;
+    color: var(--accent);
   }
   .volume {
     display: flex;

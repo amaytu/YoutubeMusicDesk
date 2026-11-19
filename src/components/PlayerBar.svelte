@@ -262,7 +262,7 @@
     position: absolute;
     inset: -5px;
     border-radius: 50%;
-    border: 1.5px solid rgba(255, 45, 70, 0.55);
+    border: 1.5px solid color-mix(in srgb, var(--accent) 55%, transparent);
     animation: pulse 2.4s ease-out infinite;
   }
   @keyframes pulse {
@@ -318,11 +318,11 @@
   }
   .heart.pop :global(svg) {
     animation: heart 0.5s var(--spring);
-    color: #ff5c8a;
+    color: var(--accent);
   }
   .heart.on {
-    color: #ff5c8a;
-    filter: drop-shadow(0 0 8px rgba(255, 92, 138, 0.5));
+    color: var(--accent);
+    filter: drop-shadow(0 0 8px var(--accent-glow));
   }
   @keyframes heart {
     40% {
