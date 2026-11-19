@@ -1,4 +1,4 @@
-<img src="docs/logo.png" width="110" align="right">
+<img src="docs/app-icon.png" width="110" align="right">
 
 # YouTube Music Desk
 
