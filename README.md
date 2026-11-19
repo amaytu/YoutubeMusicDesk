@@ -56,7 +56,7 @@ que embute um Chromium inteiro por app.
   painel lateral de faixas), Artistas.
 - **Artista**: discografia | faixas do álbum selecionado | artistas semelhantes e info.
 - **Tocando agora**: capa em tela cheia ao fundo, controles na metade esquerda e painel
-  com **Fila**, **A seguir** (filtros Tudo / Conhecido / Descobrir do mix automático) e **Letra**.
+  com **Fila**, **A seguir** (filtros Tudo / Conhecidas / Em alta / Descobrir do mix automático) e **Letra**.
   Abre sempre com a fila.
 - **Responsivo**: a janela pode ficar do tamanho de um celular (mín. 360×560) — abas vão
   para uma barra inferior e o player vira um mini player.

@@ -169,7 +169,7 @@ export async function call(method: string, args: any = {}): Promise<unknown> {
       });
     case "timedLyrics": return wait(null, 60);
     case "queue": return wait(queue.map((t, i) => ({ ...t, index: i, selected: i === qi })), 80);
-    case "queueChips": return wait(["Tudo", "Conhecidas", "Descobrir"].map((label, index) => ({ index, label, selected: index === chip })), 40);
+    case "queueChips": return wait(["Tudo", "Conhecidas", "Em alta", "Descobrir"].map((label, index) => ({ index, label, selected: index === chip })), 40);
   }
   throw new Error(`mock: ${method}`);
 }
@@ -186,7 +186,7 @@ export function cmd(name: string, arg: any) {
     case "shuffle": queue = [...queue.slice(0, qi + 1), ...queue.slice(qi + 1).sort(() => rnd() - 0.5)]; break;
     case "selectQueueChip": {
       chip = Number(arg);
-      const rest = (chip === 2 ? allTracks.slice(30, 45) : chip === 1 ? allTracks.slice(0, 12) : allTracks.slice(12, 30));
+      const rest = [allTracks.slice(12, 30), allTracks.slice(0, 12), allTracks.slice(45, 60), allTracks.slice(30, 45)][chip] ?? allTracks.slice(12, 30);
       queue = [...queue.slice(0, qi + 1), ...rest.filter((t) => t.videoId !== queue[qi].videoId)];
       return;
     }

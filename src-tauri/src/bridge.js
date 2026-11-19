@@ -441,12 +441,35 @@
       }).filter((t) => t.videoId);
     },
 
+    /**
+     * Filtros do "A seguir": só Tudo / Conhecidas / Em alta / Descobrir.
+     * A página tem mais de um grupo de chips (e gêneros); deduplica pelo nome.
+     */
     queueChips() {
-      return chipEls().map((el, index) => ({
-        index,
-        label: text(el.data?.text) || el.textContent.trim(),
-        selected: !!(el.data?.isSelected ?? el.hasAttribute("is-selected")) || el.classList.contains("selected"),
-      }));
+      const WANTED = [
+        { label: "Tudo", re: /^(tudo|todos|all)$/i },
+        { label: "Conhecidas", re: /^(conhecidas?|familiar)$/i },
+        { label: "Em alta", re: /^(em alta|popular|trending)$/i },
+        { label: "Descobrir", re: /^(descobrir|discover)$/i },
+      ];
+      const all = chipEls();
+      const nameOf = (el) => (text(el.data?.text) || el.textContent).trim();
+      // Usa só o primeiro grupo de chips que tem esses filtros (o da fila):
+      // é nele que clicamos, então o "selecionado" também vem dele.
+      const groupOf = (el) => el.closest("ytmusic-chip-cloud-renderer") ?? el.parentElement;
+      const first = all.find((el) => WANTED.some((w) => w.re.test(nameOf(el))));
+      const group = first ? groupOf(first) : null;
+      const out = [];
+      for (const w of WANTED) {
+        const matches = all
+          .map((el, index) => ({ el, index, name: nameOf(el) }))
+          .filter((c) => !group || groupOf(c.el) === group)
+          .filter((c) => w.re.test(c.name));
+        if (!matches.length) continue;
+        const sel = (c) => !!(c.el.data?.isSelected ?? c.el.hasAttribute("is-selected")) || c.el.classList.contains("selected");
+        out.push({ index: matches[0].index, label: w.label, selected: matches.some(sel) });
+      }
+      return out;
     },
 
     state() {

@@ -25,7 +25,7 @@
   let chips = $state<{ index: number; label: string; selected: boolean }[]>([]);
   let chipBusy = $state(false);
   /** Filtros padrão quando a fila atual não é um mix automático. */
-  const DEFAULT_CHIPS = ["Tudo", "Conhecido", "Descobrir"];
+  const DEFAULT_CHIPS = ["Tudo", "Conhecidas", "Em alta", "Descobrir"];
 
   /** "A seguir" = só o que vem depois da faixa atual. */
   const upNext = $derived.by(() => {
