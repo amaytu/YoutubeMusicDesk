@@ -27,6 +27,12 @@ const DISABLED_FEATURES: &[&str] = &[
     "MediaRouter",
     "OptimizationHints",
     "AutofillServerCommunication",
+    // O Chromium calcula se a janela está "coberta" e, se acha que está, para de
+    // desenhar e marca a página como escondida. Com mais de um monitor essa conta
+    // erra: usar outro app no monitor principal congelava a janela no secundário
+    // (tempo, letra e animações parados ou atrasados). Minimizar/bandeja continuam
+    // pausando a interface normalmente, e o modo economia cuida do consumo.
+    "CalculateNativeWinOcclusion",
 ];
 
 /// As duas janelas compartilham o mesmo processo do navegador, então usam
@@ -39,6 +45,7 @@ pub fn browser_args(s: &Settings) -> String {
     }
     let mut args = format!(
         "--disable-features={} --process-per-site --disable-background-networking \
+         --disable-backgrounding-occluded-windows \
          --autoplay-policy=no-user-gesture-required",
         features.join(",")
     );
@@ -197,7 +204,26 @@ fn is_google_cctld(host: &str) -> bool {
             .all(|l| (2..=3).contains(&l.len()) && l.chars().all(|c| c.is_ascii_lowercase()))
 }
 
+/// A posição salva pode ser de um monitor que foi desconectado (ou mudou de
+/// lugar): se a barra de título não estiver visível em nenhum monitor, centraliza.
+fn ensure_on_screen<R: Runtime>(w: &WebviewWindow<R>) {
+    let (Ok(pos), Ok(size), Ok(monitors)) = (w.outer_position(), w.outer_size(), w.available_monitors()) else {
+        return;
+    };
+    // faixa da barra de título (onde dá para arrastar a janela)
+    let (x0, x1) = (pos.x + 40, pos.x + size.width as i32 - 40);
+    let (y0, y1) = (pos.y, pos.y + 40);
+    let visible = monitors.iter().any(|m| {
+        let (mp, ms) = (m.position(), m.size());
+        x0 < mp.x + ms.width as i32 && x1 > mp.x && y0 < mp.y + ms.height as i32 && y1 > mp.y
+    });
+    if !visible && !monitors.is_empty() {
+        let _ = w.center();
+    }
+}
+
 fn show_window<R: Runtime>(w: &WebviewWindow<R>) {
+    ensure_on_screen(w);
     let _ = w.show();
     let _ = w.unminimize();
     let _ = w.set_focus();

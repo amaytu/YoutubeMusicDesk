@@ -56,7 +56,11 @@ class Player {
     });
     api.auth().then((a) => (this.signedIn ??= a.signedIn)).catch(() => {});
     api.state().then((s) => s && this.#apply(s)).catch(() => {});
-    document.addEventListener("visibilitychange", () => this.#syncTimer());
+    document.addEventListener("visibilitychange", () => {
+      this.#syncTimer();
+      // Voltou a aparecer: pede o estado real na hora (tempo/letra sem atraso).
+      if (!document.hidden && this.hasTrack) api.state().then((st) => st && this.#apply(st)).catch(() => {});
+    });
     // Internet voltou depois de uma falha: recarrega as telas sozinho.
     window.addEventListener("online", () => {
       if (!net.failed) return;
