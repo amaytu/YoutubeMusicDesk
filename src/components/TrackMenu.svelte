@@ -5,6 +5,7 @@
   import { trackMenu } from "../lib/contextmenu.svelte";
   import { dialog } from "../lib/dialog.svelte";
   import { likes, playlists, type Target } from "../lib/playlists.svelte";
+  import { formatTime, parseTime, starts } from "../lib/starts.svelte";
   import { artistsText } from "../lib/util";
   import Cover from "./Cover.svelte";
   import Icon from "./Icon.svelte";
@@ -51,6 +52,27 @@
     if (name) await playlists.create(name, track);
   }
 
+  const startAt = $derived(trackMenu.track ? starts.get(trackMenu.track.videoId) : 0);
+
+  async function setStart() {
+    const track = trackMenu.track;
+    if (!track) return;
+    trackMenu.close();
+    const cur = starts.get(track.videoId);
+    const text = await dialog.prompt("Começar a música em", {
+      message: `“${track.title}” vai começar sempre neste tempo (ex.: 2:15). Deixe vazio para começar do início.`,
+      placeholder: "m:ss",
+      value: cur ? formatTime(cur) : "",
+      confirm: "Salvar",
+      allowEmpty: true,
+    });
+    if (text === null) return;
+    const sec = parseTime(text);
+    if (sec === null) return playlists.notify("Tempo inválido. Use minutos:segundos, como 2:15", undefined, true);
+    starts.set(track, sec);
+    playlists.notify(sec ? `“${track.title}” vai começar em ${formatTime(sec)}` : `“${track.title}” volta a começar do início`, track.thumb);
+  }
+
   function like() {
     const track = trackMenu.track;
     if (track) likes.toggle(track);
@@ -90,6 +112,11 @@
         <Icon name={liked ? "heart-fill" : "heart"} size={18} />
       </button>
     </div>
+    <button class="item opt" onclick={setStart}>
+      <div class="i-art plus"><Icon name="clock" size={17} /></div>
+      <span class="i-name">Começar em…</span>
+      {#if startAt}<span class="tag">{formatTime(startAt)}</span>{/if}
+    </button>
     <div class="section">Adicionar ou remover da playlist</div>
     <div class="list">
       <button class="item new" onclick={newPlaylist}>
@@ -139,6 +166,19 @@
   }
   .like.on {
     color: var(--dyn-strong, var(--accent));
+  }
+  .item.opt {
+    margin: 0 6px;
+    width: calc(100% - 12px);
+  }
+  .tag {
+    margin-left: auto;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    color: var(--accent);
+    background: var(--accent-soft);
   }
   .i-art.plus {
     height: 32px;

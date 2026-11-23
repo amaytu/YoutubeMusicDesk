@@ -7,6 +7,8 @@ export interface DialogReq {
   value?: string;
   confirm: string;
   danger?: boolean;
+  /** prompt: aceita texto vazio. */
+  allowEmpty?: boolean;
   resolve: (v: string | null) => void;
 }
 
@@ -18,7 +20,7 @@ class Dialog {
     return new Promise<string | null>((resolve) => (this.req = { ...r, resolve }));
   }
   /** Pede um texto. null = cancelou. */
-  prompt(title: string, opts: { placeholder?: string; value?: string; confirm?: string; message?: string } = {}) {
+  prompt(title: string, opts: { placeholder?: string; value?: string; confirm?: string; message?: string; allowEmpty?: boolean } = {}) {
     return this.#open({ kind: "prompt", title, confirm: opts.confirm ?? "OK", ...opts });
   }
   /** Pede confirmação. */

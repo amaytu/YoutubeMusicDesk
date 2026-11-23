@@ -19,7 +19,7 @@
     const r = dialog.req;
     if (!r) return;
     if (r.kind === "prompt") {
-      if (!value.trim()) return input?.focus();
+      if (!value.trim() && !r.allowEmpty) return input?.focus();
       dialog.close(value.trim());
     } else dialog.close("ok");
   }
@@ -49,7 +49,7 @@
     {/if}
     <div class="actions">
       <button class="btn" onclick={() => dialog.close(null)}>Cancelar</button>
-      <button class="btn primary" class:danger={r.danger} disabled={r.kind === "prompt" && !value.trim()} onclick={ok}>{r.confirm}</button>
+      <button class="btn primary" class:danger={r.danger} disabled={r.kind === "prompt" && !value.trim() && !r.allowEmpty} onclick={ok}>{r.confirm}</button>
     </div>
   </div>
 {/if}

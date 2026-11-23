@@ -635,6 +635,7 @@
     const listNow = () => new URL(location.href).searchParams.get("list");
     const beforeList = listNow();
     if (videoId && videoId === before) {
+      startedFor = "";
       player()?.seekTo?.(0, true);
       player()?.playVideo?.();
       return;
@@ -713,6 +714,11 @@
       }
     },
     /** Repetir: só "em sequência" (false) ou "repetir esta música" (true). */
+    /** { videoId: segundos } — substitui a lista inteira. */
+    setStartTimes(map) {
+      startAt = map && typeof map === "object" ? map : {};
+      try { localStorage.setItem(START_KEY, JSON.stringify(startAt)); } catch (_) {}
+    },
     repeatOne(on) {
       repeatOne = !!on;
       const v = q("video");
@@ -803,6 +809,29 @@
   }
 
   let repeatOne = false;
+
+  // ---------------------------------------------------------------- início personalizado
+  // Algumas músicas têm introdução longa (ex.: "Time", do Pink Floyd, começa em 2:15).
+  // O usuário escolhe o segundo de início; vale toda vez que a música começa do zero.
+  const START_KEY = "__ymdStartAt";
+  let startAt = {};
+  try { startAt = JSON.parse(localStorage.getItem(START_KEY) ?? "{}") || {}; } catch (_) {}
+  let startedFor = "";
+  let prevTime = 0;
+  function applyStart(v) {
+    const p = player();
+    const vid = p?.getVideoData?.()?.video_id;
+    if (!vid) return;
+    const t = v.currentTime;
+    // repetir esta música: o vídeo voltou do fim para o começo
+    if (vid === startedFor && t < 1 && prevTime > (v.duration || 0) - 3) startedFor = "";
+    prevTime = t;
+    if (vid === startedFor) return;
+    startedFor = vid;
+    const s = Number(startAt[vid]);
+    if (!(s > 0) || t > 3 || (v.duration && s >= v.duration - 1)) return;
+    p.seekTo?.(s, true);
+  }
   let stateQueued = false;
   /** Último estado enviado: base para detectar desvio do relógio da UI. */
   let last = { time: 0, at: 0, playing: false, videoId: "" };
@@ -827,6 +856,7 @@
     const p = player();
     const { time } = timing(p, e.currentTarget);
     const expected = last.playing ? last.time + (now - last.at) / 1000 : last.time;
+    applyStart(e.currentTarget);
     const vid = p?.getVideoData?.()?.video_id ?? "";
     if (vid !== last.videoId || Math.abs(time - expected) > 1.0 || now - last.at > 5000) emitState();
   }

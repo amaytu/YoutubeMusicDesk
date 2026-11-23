@@ -30,6 +30,8 @@ O instalador não é assinado: se o SmartScreen avisar, clique em
   adicionar, remover ou curtir; criar, renomear e excluir playlists.
 - **Ilha dinâmica**: com o app em segundo plano, uma pílula no topo da tela mostra a
   música e a letra; passe o mouse para ver os controles.
+- **Início personalizado**: botão direito → *Começar em…* para uma música sempre
+  começar no tempo escolhido (ex.: "Time", do Pink Floyd, em 2:15).
 - **Cores que acompanham a capa** da música tocando.
 - **Teclas de mídia**, ícone na bandeja, iniciar com o Windows e modo economia.
 - **Login com Google** em poucos cliques; a sessão fica salva.

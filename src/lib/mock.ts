@@ -122,11 +122,13 @@ function emit() {
   state.at = Date.now();
   for (const l of listeners) l({ kind: "state", data: { ...state } });
 }
+let startAt: Record<string, number> = {};
 function load(t: Track, play = true) {
+  const dur = t.duration!.split(":").reduce((a, p) => a * 60 + Number(p), 0);
   Object.assign(state, {
     videoId: t.videoId, title: t.title, artist: t.artists?.map((a) => a.name).join(", ") ?? "", album: t.album?.name ?? "",
     artistId: t.artists?.[0]?.id ?? "", albumId: t.album?.id ?? "", thumb: t.thumb ?? "",
-    duration: t.duration!.split(":").reduce((a, p) => a * 60 + Number(p), 0), time: 0, playing: play, liked: false,
+    duration: dur, time: (startAt[t.videoId] ?? 0) < dur - 1 ? (startAt[t.videoId] ?? 0) : 0, playing: play, liked: false,
   });
   emit();
 }
@@ -219,6 +221,7 @@ export function cmd(name: string, arg: any) {
       else likedIds.delete(state.videoId);
       break;
     case "repeatOne": state.repeat = arg ? "ONE" : "NONE"; break;
+    case "setStartTimes": startAt = arg ?? {}; break;
     case "shuffle": queue = [...queue.slice(0, qi + 1), ...queue.slice(qi + 1).sort(() => rnd() - 0.5)]; break;
     case "selectQueueChip": {
       chip = Number(typeof arg === "object" && arg ? arg.index : arg);

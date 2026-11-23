@@ -9,6 +9,10 @@
   import { updates } from "../lib/updates.svelte";
   import Icon from "../components/Icon.svelte";
   import { keepScroll } from "../lib/util";
+  import { formatTime, starts } from "../lib/starts.svelte";
+  import Cover from "../components/Cover.svelte";
+
+  const startList = $derived(Object.entries(starts.list).sort((a, b) => a[1].title.localeCompare(b[1].title)));
 
   let prefs = $state<Prefs | null>(null);
   let busy = $state<string | null>(null);
@@ -119,6 +123,27 @@
       <button class="btn" type="submit" disabled={!deepl.trim() || busy !== null}>Salvar</button>
       {#if prefs?.deepl}<button class="btn" type="button" onclick={() => saveDeepl(true)}>Remover</button>{/if}
     </form>
+  </section>
+
+  <section class="card glass">
+    <h2>Início personalizado</h2>
+    {#if startList.length}
+      {#each startList as [id, e] (id)}
+        <div class="row static start">
+          <Cover src={e.thumb} size={40} />
+          <span class="text"><span class="label">{e.title}</span><span class="hint">{e.artist}</span></span>
+          <span class="time">{formatTime(e.start)}</span>
+          <button class="icon-btn" title="Começar do início" onclick={() => starts.remove(id)}><Icon name="close" size={14} /></button>
+        </div>
+      {/each}
+    {:else}
+      <div class="row static">
+        <span class="text">
+          <span class="label">Nenhuma música com início personalizado</span>
+          <span class="hint">Clique com o botão direito numa música → <b>Começar em…</b> para pular a introdução (ex.: “Time”, do Pink Floyd, em 2:15).</span>
+        </span>
+      </div>
+    {/if}
   </section>
 
   <section class="card glass">
@@ -252,6 +277,19 @@
     font-size: 12.5px;
     color: var(--text-2, rgba(255, 255, 255, 0.6));
     line-height: 1.4;
+  }
+  .start :global(.cover) {
+    flex: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+  }
+  .time {
+    font: 700 13px/1 ui-monospace, "Cascadia Code", Consolas, monospace;
+    color: var(--accent);
+    padding: 5px 9px;
+    border-radius: 8px;
+    background: var(--accent-soft);
   }
   .switch {
     flex: none;

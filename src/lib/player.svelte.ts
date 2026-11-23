@@ -4,6 +4,7 @@
 import { api, net, onYtm, playerCmd, showLogin, signOut, clearCache } from "./api";
 import { vt } from "./fx.svelte";
 import { likes } from "./playlists.svelte";
+import { starts } from "./starts.svelte";
 import type { Collection, PlayerState, RepeatMode, Track } from "./types";
 
 const EMPTY: PlayerState = {
@@ -52,6 +53,8 @@ class Player {
           this.authVersion++;
         }
         this.signedIn = ev.data.signedIn;
+        // O player pode ter recarregado (ex.: saiu da conta): reenvia os inícios.
+        starts.sync();
       }
     });
     api.auth().then((a) => (this.signedIn ??= a.signedIn)).catch(() => {});
