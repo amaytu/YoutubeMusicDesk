@@ -280,7 +280,7 @@
       height: 14px;
     }
   }
-  @media (max-width: 1100px) {
+  @media (min-width: 701px) and (max-width: 1100px) {
     .row {
       grid-template-columns: 44px minmax(0, 2fr) minmax(0, 1.2fr) 56px;
     }

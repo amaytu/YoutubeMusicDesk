@@ -106,9 +106,9 @@
     <button class="icon-btn" onclick={close} title="Fechar (Esc)"><Icon name="collapse" size={22} /></button>
     <h2>Tocando agora</h2>
     <nav class="tabs">
-      <button class:on={tab === "queue"} onclick={() => toggleTab("queue")}><Icon name="queue" size={16} /> <span>Fila</span></button>
-      <button class:on={tab === "upnext"} onclick={() => toggleTab("upnext")}><Icon name="upnext" size={16} /> <span>A seguir</span></button>
-      <button class:on={tab === "lyrics"} onclick={() => toggleTab("lyrics")}><Icon name="lyrics" size={16} /> <span>Letra</span></button>
+      <button class:on={tab === "queue"} onclick={() => toggleTab("queue")} title="Fila"><Icon name="queue" size={16} /> <span>Fila</span></button>
+      <button class:on={tab === "upnext"} onclick={() => toggleTab("upnext")} title="A seguir"><Icon name="upnext" size={16} /> <span>A seguir</span></button>
+      <button class:on={tab === "lyrics"} onclick={() => toggleTab("lyrics")} title="Letra"><Icon name="lyrics" size={16} /> <span>Letra</span></button>
     </nav>
   </header>
 
@@ -215,8 +215,8 @@
           <button class="icon-btn" onclick={() => player.toggleMute()} title="Volume"><Icon name={volIcon} size={18} /></button>
           <div class="vol-range"><Range label="Volume" value={s.muted ? 0 : s.volume} oninput={(v) => player.setVolume(v)} /></div>
         </div>
-        <button class="icon-btn" class:on={tab === "lyrics"} onclick={() => toggleTab("lyrics")} title="Letra"><Icon name="lyrics" size={18} /></button>
-        <button class="icon-btn" class:on={tab === "queue"} onclick={() => toggleTab("queue")} title="Fila"><Icon name="queue" size={18} /></button>
+        <button class="icon-btn dup" class:on={tab === "lyrics"} onclick={() => toggleTab("lyrics")} title="Letra"><Icon name="lyrics" size={18} /></button>
+        <button class="icon-btn dup" class:on={tab === "queue"} onclick={() => toggleTab("queue")} title="Fila"><Icon name="queue" size={18} /></button>
       </div>
     </div>
   </footer>
@@ -273,13 +273,18 @@
   }
   h2 {
     flex: 1;
+    min-width: 0;
     margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     font: 300 28px var(--font-display);
     letter-spacing: 0.06em;
     text-transform: uppercase;
     text-shadow: 0 2px 16px rgba(0, 0, 0, 0.5);
   }
   .tabs {
+    flex: none;
     display: flex;
     gap: 4px;
   }
@@ -494,6 +499,7 @@
     flex: 1;
   }
   .play {
+    flex: none;
     width: 46px;
     height: 46px;
     border-radius: 50%;
@@ -511,6 +517,7 @@
     transform: scale(0.92);
   }
   .pill {
+    flex: none;
     width: 34px;
     height: 34px;
     margin-left: 4px;
@@ -560,6 +567,13 @@
     .tabs span {
       display: none;
     }
+    /* só ícone: botão redondo de verdade */
+    .tabs button {
+      width: 38px;
+      height: 38px;
+      padding: 0;
+      justify-content: center;
+    }
     .half {
       width: 100%;
     }
@@ -600,6 +614,46 @@
     }
     .volume {
       display: none;
+    }
+  }
+  /* janela bem estreita (tamanho de celular) */
+  @media (max-width: 520px) {
+    h2 {
+      font-size: 15px;
+      letter-spacing: 0.04em;
+    }
+    .top {
+      gap: 6px;
+    }
+    .tabs {
+      gap: 2px;
+    }
+    .buttons {
+      gap: 2px;
+    }
+    /* Letra e Fila já estão nas abas do topo */
+    .buttons .dup {
+      display: none;
+    }
+  }
+  @media (max-width: 380px) {
+    h2 {
+      display: none;
+    }
+    .top {
+      justify-content: space-between;
+    }
+    .buttons :global(.icon-btn) {
+      width: 34px;
+      height: 34px;
+    }
+    .play {
+      width: 42px;
+      height: 42px;
+    }
+    .pill {
+      width: 32px;
+      height: 32px;
     }
   }
 </style>
