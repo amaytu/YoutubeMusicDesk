@@ -635,7 +635,7 @@
     const listNow = () => new URL(location.href).searchParams.get("list");
     const beforeList = listNow();
     if (videoId && videoId === before) {
-      startedFor = "";
+      armStart();
       player()?.seekTo?.(0, true);
       player()?.playVideo?.();
       return;
@@ -816,20 +816,41 @@
   const START_KEY = "__ymdStartAt";
   let startAt = {};
   try { startAt = JSON.parse(localStorage.getItem(START_KEY) ?? "{}") || {}; } catch (_) {}
-  let startedFor = "";
+  // "Armado" quando uma faixa nova começa a carregar (troca de faixa, autoplay,
+  // aleatório, próxima). O pulo acontece no primeiro instante em que ela está no
+  // começo. Não dá para confiar só no videoId: o YT Music troca o id um pouco
+  // antes da faixa anterior terminar, quando o tempo ainda é o do fim dela.
+  let armedAt = 0;
+  let armedVid = "";
+  let doneVid = "";
   let prevTime = 0;
+  function armStart() {
+    armedAt = Date.now();
+    armedVid = "";
+  }
   function applyStart(v) {
     const p = player();
     const vid = p?.getVideoData?.()?.video_id;
     if (!vid) return;
     const t = v.currentTime;
     // repetir esta música: o vídeo voltou do fim para o começo
-    if (vid === startedFor && t < 1 && prevTime > (v.duration || 0) - 3) startedFor = "";
+    if (t < 1 && prevTime > (v.duration || 0) - 3 && prevTime > 5) armStart();
     prevTime = t;
-    if (vid === startedFor) return;
-    startedFor = vid;
+    // id mudou sem evento de carga (alguns caminhos do YT Music): arma também
+    if (vid !== doneVid && vid !== armedVid && !armedAt) armStart();
+    if (!armedAt) return;
+    armedVid = vid;
+    // retomada no meio (ex.: app reabriu a música onde parou): desiste depois de um tempo
+    if (Date.now() - armedAt > 8000) {
+      armedAt = 0;
+      doneVid = vid;
+      return;
+    }
+    if (t > 3) return; // ainda é o fim da faixa anterior (ou carregando): espera
+    armedAt = 0;
+    doneVid = vid;
     const s = Number(startAt[vid]);
-    if (!(s > 0) || t > 3 || (v.duration && s >= v.duration - 1)) return;
+    if (!(s > 0) || (v.duration && s >= v.duration - 1)) return;
     p.seekTo?.(s, true);
   }
   let stateQueued = false;
@@ -879,6 +900,9 @@
     for (const ev of ["play", "playing", "pause", "waiting", "ended", "seeked", "loadedmetadata", "durationchange", "ratechange", "volumechange", "emptied"])
       v.addEventListener(ev, emitState);
     v.addEventListener("timeupdate", onTimeUpdate);
+    // faixa nova carregando (inclui autoplay e aleatório): arma o início personalizado
+    v.addEventListener("loadstart", armStart);
+    v.addEventListener("emptied", armStart);
     // O YT Music pode resetar o loop ao trocar de faixa: reaplica o modo escolhido.
     v.addEventListener("loadedmetadata", () => (v.loop = repeatOne));
     // "Ainda está ouvindo?" -> confirma automaticamente.
